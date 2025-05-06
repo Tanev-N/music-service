@@ -1,2 +1,2 @@
-# music-service-react
-This repository for frontend static files of music streaming service.
+# music-service
+This repository for music streaming service.
