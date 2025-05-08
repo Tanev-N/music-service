@@ -1,0 +1,33 @@
+.input {
+    width: 250px;
+    padding: 10px 14px;
+    font-size: 1rem;
+    border: 1.5px solid #bdbdbd;
+    border-radius: 4px;
+    background: #fafbfc;
+    color: #222;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    margin-bottom: 18px;
+    box-sizing: border-box;
+  }
+  
+  .input:focus {
+    border-color: #1976d2;
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+    background: #fff;
+  }
+  
+  .input::placeholder {
+    color: #9e9e9e;
+    opacity: 1;
+  }
+
+  .label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.97rem;
+    color: #555;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }

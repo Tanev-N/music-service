@@ -1,2 +1,5 @@
-# music-service
-This repository for music streaming service.
+# Music-service
+
+It is education project. Not for production.
+
+Made by Nikolas and Sofia.

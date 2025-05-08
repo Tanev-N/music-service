@@ -1,0 +1,11 @@
+app:
+  name: "music-service"
+  port: "8080"
+
+db:
+  host: "postgres"
+  port: "5432"
+  username: "sonya"
+  password: "1234"
+  dbname: "music_service"
+  sslmode: "disable" 

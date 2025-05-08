@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  go-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.go
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      - APP_NAME=music-service
+      - APP_PORT=8080
+      - DB_HOST=postgres 
+      - DB_PORT=5432
+      - DB_USERNAME=sonya
+      - DB_PASSWORD=1234
+      - DB_NAME=music_service
+      - DB_SSLMODE=disable
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=sonya
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_DB=music_service
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+
+volumes:
+  postgres_data:

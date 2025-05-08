@@ -1,0 +1,45 @@
+.nav {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    padding: 12px 24px;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(60, 64, 67, 0.15);
+
+}
+
+.navelement {
+    color: #3f51b5;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.navelement:hover,
+.navelement:focus {
+    background: rgba(63, 81, 181, 0.08);
+    color: #34375f;
+    box-shadow: 0 1px 4px rgba(60, 64, 67, 0.10);
+}
+.navelement.active {
+    background: #c4cdfe;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(63, 81, 181, 0.15);
+}
+.link {
+    color: #3f51b5;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.link:hover,
+.link:focus {
+    color: #2f3575;
+    
+}
