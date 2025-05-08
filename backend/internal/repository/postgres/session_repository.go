@@ -21,13 +21,13 @@ func NewSessionRepository(db *sql.DB) interfaces.SessionRepository {
 
 func (r *SessionRepository) CreateSession(userID uuid.UUID) (*models.Session, error) {
 	session := &models.Session{
-		ID:        uuid.New().String(),
-		UserID:    userID,
-		ExpiresAt: time.Now().Add(24 * time.Hour), // Сессия на 24 часа
+		ID:        uuid.New(),
+		Token:     uuid.New().String(),
+		ExpiresAt: time.Now().Add(24 * time.Hour),
 	}
 
-	query := `INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3)`
-	_, err := r.db.Exec(query, session.ID, session.UserID, session.ExpiresAt)
+	query := `INSERT INTO sessions (id, token, expires_at) VALUES ($1, $2, $3)`
+	_, err := r.db.Exec(query, session.ID, session.Token, session.ExpiresAt)
 	if err != nil {
 		return nil, err
 	}
@@ -37,8 +37,8 @@ func (r *SessionRepository) CreateSession(userID uuid.UUID) (*models.Session, er
 
 func (r *SessionRepository) GetSession(sessionID string) (*models.Session, error) {
 	var session models.Session
-	query := `SELECT id, user_id, expires_at FROM sessions WHERE id = $1 AND expires_at > NOW()`
-	err := r.db.QueryRow(query, sessionID).Scan(&session.ID, &session.UserID, &session.ExpiresAt)
+	query := `SELECT id, token, expires_at FROM sessions WHERE id = $1 AND expires_at > NOW()`
+	err := r.db.QueryRow(query, sessionID).Scan(&session.ID, &session.Token, &session.ExpiresAt)
 	if err != nil {
 		return nil, err
 	}

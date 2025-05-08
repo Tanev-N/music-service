@@ -6,7 +6,10 @@ import (
 	"music-service/internal/repository/interfaces"
 	usecaseInterfaces "music-service/internal/usecases/interfaces"
 
+	"time"
+
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type userUseCase struct {
@@ -40,10 +43,19 @@ func (uc *userUseCase) Register(login, password string) (*models.User, error) {
 		return nil, errors.New("user already exists")
 	}
 
+	hashedPassword, err := hashPassword(password)
+	if err != nil {
+		return nil, errors.New("error hashing password")
+	}
+
+	now := time.Now()
 	user := &models.User{
+		ID:         uuid.New(),
 		Login:      login,
-		Password:   hashPassword(password),
+		Password:   hashedPassword,
 		Permission: models.UserPermission,
+		CreatedAt:  now,
+		UpdatedAt:  now,
 	}
 
 	if err := uc.userRepo.Save(user); err != nil {
@@ -64,39 +76,71 @@ func (uc *userUseCase) Authenticate(login, password string) (*models.User, *mode
 		return nil, nil, errors.New("invalid credentials")
 	}
 
-	session, err := uc.sessionRepo.CreateSession(user.ID)
+	session := &models.Session{
+		ID:        uuid.New(),
+		Token:     generateToken(),
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}
+
+	createdSession, err := uc.sessionRepo.CreateSession(user.ID)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return user, session, nil
+	createdSession.Token = session.Token
+
+	return user, createdSession, nil
 }
 
 func (uc *userUseCase) GetUserProfile(userID uuid.UUID) (*models.User, error) {
-	return uc.userRepo.FindByID(userID)
+	user, err := uc.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+	return user, nil
 }
 
 func (uc *userUseCase) UpdatePermissions(userID uuid.UUID, permission models.Permission) error {
+	if !permission.IsValid() {
+		return errors.New("invalid permission")
+	}
+
 	user, err := uc.userRepo.FindByID(userID)
 	if err != nil {
-		return err
+		return errors.New("user not found")
 	}
 
 	user.Permission = permission
+	user.UpdatedAt = time.Now()
+
 	return uc.userRepo.Save(user)
 }
 
 func (uc *userUseCase) DeleteUser(userID uuid.UUID) error {
+	_, err := uc.userRepo.FindByID(userID)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
 	if err := uc.sessionRepo.DeleteAllForUser(userID); err != nil {
 		return err
 	}
 	return uc.userRepo.Delete(userID)
 }
 
-func hashPassword(password string) string {
-	return "hashed_" + password
+func hashPassword(password string) (string, error) {
+	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedBytes), nil
 }
 
 func checkPasswordHash(password, hash string) bool {
-	return hash == "hashed_"+password
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+func generateToken() string {
+	return uuid.New().String()
 }

@@ -7,8 +7,7 @@ import (
 )
 
 type Session struct {
-	ID        string
-	UserID    uuid.UUID
-	ExpiresAt time.Time
-	CreatedAt time.Time
+	ID        uuid.UUID `json:"id"`
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
