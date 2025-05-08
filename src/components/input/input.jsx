@@ -1,6 +1,6 @@
 import styles from './input.module.css'
 
-const Input = ({ label, type = "text", value, onChange, placeholder, ...props }) => {
+const Input = ({ error, label, type = "text", value, onChange, placeholder, ...props }) => {
     return (
         <div className={styles.inputWrapper}>
             {label && <label className={styles.label}>{label}</label>}
@@ -12,6 +12,7 @@ const Input = ({ label, type = "text", value, onChange, placeholder, ...props })
                 placeholder={placeholder}
                 {...props}
             />
+            {error && <span>{error}</span>}
         </div>
     );
 };

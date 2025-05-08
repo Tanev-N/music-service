@@ -2,22 +2,35 @@ import { useState } from "react";
 import { Input } from "@components/input/input";
 import { Button } from "@components/button/button";
 import styles from "@pages/login/login.module.css";
-
+import { Register } from "./register-api";
 const RegisterPage = () => {
     const [form, setForm] = useState({
         login: "",
         password: "",
-        repeatPassword: "",
+        repeatPassword: ""
     });
+    const [errors, setErrors] = useState({
+        login: "",
+        password: "",
+        repeatPassword: ""
+    })
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit =  async (e) => {
         e.preventDefault();
-        // Здесь обработка регистрации
-        console.log(form);
+        if (form.password != form.repeatPassword)
+        {
+            setErrors({ ...errors, repeatPassword:"Пароли не совпадают" });
+        }
+        else {
+            setErrors({ ...errors, repeatPassword:"" });
+            answer = await Register(form.login, form.password);
+            console.log(answer)
+        }
+        
     };
 
     return (
@@ -27,20 +40,26 @@ const RegisterPage = () => {
                 <Input
                     text="Логин"
                     name="login"
+                    label="Логин"
                     value={form.login}
+                    error={errors.login}
                     onChange={handleChange}
                 />
                 <Input
                     text="Пароль"
                     type="password"
                     name="password"
+                    label="Пароль"
                     value={form.password}
+                    error={errors.password}
                     onChange={handleChange}
                 />
                 <Input
                     text="Повторите пароль"
                     type="password"
                     name="repeatPassword"
+                    label="Повторите пароль"
+                    error={errors.repeatPassword}
                     value={form.repeatPassword}
                     onChange={handleChange}
                 />
