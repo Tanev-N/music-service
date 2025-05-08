@@ -80,6 +80,20 @@ paths:
         '500':
           description: Ошибка сервера
 
+  /users/logout:
+    post:
+      summary: Выход из аккаунта
+      operationId: logoutUser
+      tags:
+        - users
+      responses:
+        '200':
+          description: Успешный выход
+        '401':
+          description: Не авторизован
+        '500':
+          description: Ошибка сервера
+
   /users/{id}:
     get:
       summary: Получить профиль пользователя

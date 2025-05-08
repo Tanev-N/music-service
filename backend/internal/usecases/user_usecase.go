@@ -128,6 +128,10 @@ func (uc *userUseCase) DeleteUser(userID uuid.UUID) error {
 	return uc.userRepo.Delete(userID)
 }
 
+func (uc *userUseCase) Logout(sessionID uuid.UUID) error {
+	return uc.sessionRepo.DeleteSession(sessionID.String())
+}
+
 func hashPassword(password string) (string, error) {
 	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {

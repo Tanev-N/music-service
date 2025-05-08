@@ -12,4 +12,5 @@ type UserUseCase interface {
 	GetUserProfile(userID uuid.UUID) (*models.User, error)
 	UpdatePermissions(userID uuid.UUID, permission models.Permission) error
 	DeleteUser(userID uuid.UUID) error
+	Logout(sessionID uuid.UUID) error
 }

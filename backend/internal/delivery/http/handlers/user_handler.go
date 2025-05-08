@@ -108,6 +108,16 @@ func (h *UserHandler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    session.Token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+		Expires:  session.ExpiresAt,
+	})
+
 	writeJSON(w, http.StatusOK, authResponse{
 		User:    toUserResponse(user),
 		Session: session,
@@ -181,4 +191,36 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *UserHandler) LogoutUser(w http.ResponseWriter, r *http.Request) {
+	// Получаем токен из куки
+	cookie, err := r.Cookie("session_token")
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "Не авторизован")
+		return
+	}
+
+	sessionID, err := uuid.Parse(cookie.Value)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Неверный формат токена")
+		return
+	}
+
+	if err := h.userUseCase.Logout(sessionID); err != nil {
+		writeError(w, http.StatusInternalServerError, "Ошибка при выходе из системы")
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	})
+
+	w.WriteHeader(http.StatusOK)
 }

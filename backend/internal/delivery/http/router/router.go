@@ -31,6 +31,7 @@ func NewRouter(
 	v1.HandleFunc("/users/{id}", userHandler.GetUserProfile).Methods("GET", "OPTIONS")
 	v1.HandleFunc("/users/{id}/permissions", userHandler.UpdateUserPermissions).Methods("PATCH", "OPTIONS")
 	v1.HandleFunc("/users/{id}", userHandler.DeleteUser).Methods("DELETE", "OPTIONS")
+	v1.HandleFunc("/users/logout", userHandler.LogoutUser).Methods("POST", "OPTIONS")
 
 	return router
 }
