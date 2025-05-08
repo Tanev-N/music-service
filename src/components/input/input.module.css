@@ -1,5 +1,5 @@
 .input {
-    width: 250px;
+    width: 300px;
     padding: 10px 14px;
     font-size: 1rem;
     border: 1.5px solid #bdbdbd;
@@ -30,4 +30,15 @@
     color: #555;
     font-weight: 500;
     letter-spacing: 0.01em;
+  }
+  .error {
+    color: #d32f2f;
+    font-size: 0.93rem;
+    margin-top: -12px;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .inputError {
+    border-color: #d32f2f;
+    background: #fff0f0;
   }

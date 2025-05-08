@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Input } from "@components/input/input";
 import { Button } from "@components/button/button";
 import styles from "@pages/login/login.module.css";
 import { Register } from "./register-api";
-import { AuthProvider } from "@/features/auth-provider/auth-provider";
+import { AuthContext } from "@/features/auth-provider/auth-provider";
 import { Navigate } from "react-router";
 
 const RegisterPage = () => {
@@ -17,9 +17,23 @@ const RegisterPage = () => {
         password: "",
         repeatPassword: ""
     })
-
+    const { login } = useContext(AuthContext);
     const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setForm({ ...form, [name]: value });
+
+        if (name === "login") {
+            setErrors({
+                ...errors,
+                login: value.length < 8 ? "Логин должен быть не менее 8 символов" : ""
+            });
+        }
+        if (name === "password") {
+            setErrors({
+                ...errors,
+                password: value.length < 8 ? "Пароль должен быть не менее 8 символов" : ""
+            });
+        }
     };
 
     const handleSubmit =  async (e) => {
@@ -33,8 +47,8 @@ const RegisterPage = () => {
             const response = await Register(form.login, form.password);
             if (response.ok) {
                 const {login, permission} = response.json()
-                // Вот тут нужно использовать Auth провайдер и редиректить на /
-            }
+                
+                        }
             else {
 
             }

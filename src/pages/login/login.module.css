@@ -5,8 +5,8 @@
     padding: 10px 12px;
     justify-content: center;
     align-items: center; /* Changed align-content to align-items */
-    height: fit-content;
-    width: fit-content;
+    height: 600px;
+    width: 400px;
     border-radius: 10px;
     background: linear-gradient(135deg, #89f7fe, #66a6ff);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
