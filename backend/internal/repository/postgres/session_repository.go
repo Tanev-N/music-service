@@ -26,8 +26,8 @@ func (r *SessionRepository) CreateSession(userID uuid.UUID) (*models.Session, er
 		ExpiresAt: time.Now().Add(24 * time.Hour),
 	}
 
-	query := `INSERT INTO sessions (id, token, expires_at) VALUES ($1, $2, $3)`
-	_, err := r.db.Exec(query, session.ID, session.Token, session.ExpiresAt)
+	query := `INSERT INTO sessions (id, user_id, token, expires_at) VALUES ($1, $2, $3, $4)`
+	_, err := r.db.Exec(query, session.ID, userID, session.Token, session.ExpiresAt)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func (r *SessionRepository) CreateSession(userID uuid.UUID) (*models.Session, er
 
 func (r *SessionRepository) GetSession(sessionID string) (*models.Session, error) {
 	var session models.Session
-	query := `SELECT id, token, expires_at FROM sessions WHERE id = $1 AND expires_at > NOW()`
+	query := `SELECT id, token, expires_at FROM sessions WHERE token = $1 AND expires_at > NOW()`
 	err := r.db.QueryRow(query, sessionID).Scan(&session.ID, &session.Token, &session.ExpiresAt)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (r *SessionRepository) GetSession(sessionID string) (*models.Session, error
 }
 
 func (r *SessionRepository) DeleteSession(sessionID string) error {
-	query := `DELETE FROM sessions WHERE id = $1`
+	query := `DELETE FROM sessions WHERE token = $1`
 	_, err := r.db.Exec(query, sessionID)
 	return err
 }
