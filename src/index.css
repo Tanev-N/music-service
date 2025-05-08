@@ -7,9 +7,10 @@
     --md-line-height: 1.5;
 }
 
-#root {
+body {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
     font-family: var(--md-font-family);
     font-size: var(--md-font-size);
     font-weight: var(--md-font-weight-regular);
