@@ -1,7 +1,6 @@
 package config
 
 import (
-	"music-service/internal/repository/db"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -9,7 +8,6 @@ import (
 
 type Config struct {
 	App AppConfig `yaml:"app"`
-	DB  db.Config `yaml:"db"`
 }
 
 type AppConfig struct {

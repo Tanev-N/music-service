@@ -7,5 +7,5 @@ db:
   port: "5432"
   username: "sonya"
   password: "1234"
-  dbname: "music_service"
+  name: "music_service"
   sslmode: "disable" 

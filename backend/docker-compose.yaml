@@ -12,12 +12,7 @@ services:
     environment:
       - APP_NAME=music-service
       - APP_PORT=8080
-      - DB_HOST=postgres 
-      - DB_PORT=5432
-      - DB_USERNAME=sonya
-      - DB_PASSWORD=1234
-      - DB_NAME=music_service
-      - DB_SSLMODE=disable
+      - DATABASE_URL=postgres://sonya:1234@postgres:5432/music_service?sslmode=disable
     restart: unless-stopped
 
   postgres:

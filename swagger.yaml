@@ -1,0 +1,983 @@
+openapi: 3.0.0
+info:
+  title: Music Service API
+  description: API для музыкального сервиса
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Основной API сервер
+paths:
+  /users:
+    post:
+      summary: Регистрация нового пользователя
+      operationId: registerUser
+      tags:
+        - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                login:
+                  type: string
+                  example: "user123"
+                password:
+                  type: string
+                  example: "password123"
+              required:
+                - login
+                - password
+      responses:
+        '201':
+          description: Пользователь успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Некорректные данные запроса
+        '500':
+          description: Ошибка сервера
+  
+  /users/auth:
+    post:
+      summary: Аутентификация пользователя
+      operationId: authenticateUser
+      tags:
+        - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                login:
+                  type: string
+                  example: "user123"
+                password:
+                  type: string
+                  example: "password123"
+              required:
+                - login
+                - password
+      responses:
+        '200':
+          description: Аутентификация успешна
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  session:
+                    $ref: '#/components/schemas/Session'
+        '401':
+          description: Неверные учетные данные
+        '500':
+          description: Ошибка сервера
+
+  /users/{id}:
+    get:
+      summary: Получить профиль пользователя
+      operationId: getUserProfile
+      tags:
+        - users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Профиль пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Пользователь не найден
+        '500':
+          description: Ошибка сервера
+    
+    delete:
+      summary: Удалить пользователя
+      operationId: deleteUser
+      tags:
+        - users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Пользователь успешно удален
+        '404':
+          description: Пользователь не найден
+        '500':
+          description: Ошибка сервера
+
+  /users/{id}/permissions:
+    patch:
+      summary: Обновить разрешения пользователя
+      operationId: updateUserPermissions
+      tags:
+        - users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                permission:
+                  type: string
+                  enum: [user, admin, moderator]
+                  example: "admin"
+              required:
+                - permission
+      responses:
+        '200':
+          description: Разрешения обновлены
+        '400':
+          description: Некорректные данные запроса
+        '404':
+          description: Пользователь не найден
+        '500':
+          description: Ошибка сервера
+
+  /tracks:
+    get:
+      summary: Поиск треков
+      operationId: searchTracks
+      tags:
+        - tracks
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "song title"
+      responses:
+        '200':
+          description: Список найденных треков
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Track'
+        '400':
+          description: Некорректные параметры запроса
+        '500':
+          description: Ошибка сервера
+
+  /tracks/{id}:
+    get:
+      summary: Получить детали трека
+      operationId: getTrackDetails
+      tags:
+        - tracks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Детали трека
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Track'
+        '404':
+          description: Трек не найден
+        '500':
+          description: Ошибка сервера
+    
+    put:
+      summary: Обновить метаданные трека
+      operationId: updateTrackMetadata
+      tags:
+        - tracks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Метаданные обновлены
+        '404':
+          description: Трек не найден
+        '500':
+          description: Ошибка сервера
+    
+    delete:
+      summary: Удалить трек
+      operationId: deleteTrack
+      tags:
+        - tracks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Трек успешно удален
+        '404':
+          description: Трек не найден
+        '500':
+          description: Ошибка сервера
+
+  /tracks/{id}/play:
+    post:
+      summary: Воспроизвести трек
+      operationId: playTrack
+      tags:
+        - tracks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Трек воспроизводится
+        '404':
+          description: Трек не найден
+        '500':
+          description: Ошибка сервера
+
+  /albums:
+    post:
+      summary: Создать новый альбом
+      operationId: createAlbum
+      tags:
+        - albums
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "My New Album"
+                release_date:
+                  type: string
+                  format: date-time
+                cover_url:
+                  type: string
+                  example: "https://example.com/album-cover.jpg"
+              required:
+                - title
+                - release_date
+      responses:
+        '201':
+          description: Альбом успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Album'
+        '400':
+          description: Некорректные данные запроса
+        '500':
+          description: Ошибка сервера
+
+  /albums/{id}:
+    get:
+      summary: Получить детали альбома
+      operationId: getAlbumDetails
+      tags:
+        - albums
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Детали альбома с треками
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  album:
+                    $ref: '#/components/schemas/Album'
+                  tracks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Track'
+        '404':
+          description: Альбом не найден
+        '500':
+          description: Ошибка сервера
+    
+    put:
+      summary: Обновить информацию об альбоме
+      operationId: updateAlbumInfo
+      tags:
+        - albums
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Updated Album Title"
+                release_date:
+                  type: string
+                  format: date-time
+                cover_url:
+                  type: string
+                  example: "https://example.com/new-cover.jpg"
+              required:
+                - title
+                - release_date
+      responses:
+        '200':
+          description: Информация об альбоме обновлена
+        '404':
+          description: Альбом не найден
+        '500':
+          description: Ошибка сервера
+
+  /albums/{id}/tracks:
+    post:
+      summary: Добавить трек в альбом
+      operationId: addTrackToAlbum
+      tags:
+        - albums
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                track_id:
+                  type: string
+                  format: uuid
+              required:
+                - track_id
+      responses:
+        '200':
+          description: Трек добавлен в альбом
+        '404':
+          description: Альбом или трек не найден
+        '500':
+          description: Ошибка сервера
+
+  /albums/{albumId}/tracks/{trackId}:
+    delete:
+      summary: Удалить трек из альбома
+      operationId: removeTrackFromAlbum
+      tags:
+        - albums
+      parameters:
+        - name: albumId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: trackId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Трек удален из альбома
+        '404':
+          description: Альбом или трек не найден
+        '500':
+          description: Ошибка сервера
+
+  /playlists:
+    post:
+      summary: Создать новый плейлист
+      operationId: createPlaylist
+      tags:
+        - playlists
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "My Favorite Songs"
+                description:
+                  type: string
+                  example: "A collection of my favorite songs"
+              required:
+                - name
+      responses:
+        '201':
+          description: Плейлист успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playlist'
+        '400':
+          description: Некорректные данные запроса
+        '500':
+          description: Ошибка сервера
+
+  /playlists/{id}:
+    get:
+      summary: Получить плейлист с треками
+      operationId: getPlaylistWithTracks
+      tags:
+        - playlists
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Плейлист с треками
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaylistTrack'
+        '404':
+          description: Плейлист не найден
+        '500':
+          description: Ошибка сервера
+    
+    put:
+      summary: Обновить информацию о плейлисте
+      operationId: editPlaylistInfo
+      tags:
+        - playlists
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Updated Playlist Name"
+                description:
+                  type: string
+                  example: "Updated description for the playlist"
+              required:
+                - name
+      responses:
+        '200':
+          description: Информация о плейлисте обновлена
+        '404':
+          description: Плейлист не найден
+        '500':
+          description: Ошибка сервера
+
+  /playlists/{id}/tracks:
+    get:
+      summary: Получить треки из плейлиста
+      operationId: getPlaylistTracks
+      tags:
+        - playlists
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Список треков в плейлисте
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Track'
+        '404':
+          description: Плейлист не найден
+        '500':
+          description: Ошибка сервера
+    
+    post:
+      summary: Добавить трек в плейлист
+      operationId: addTrackToPlaylist
+      tags:
+        - playlists
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                track_id:
+                  type: string
+                  format: uuid
+              required:
+                - track_id
+      responses:
+        '200':
+          description: Трек добавлен в плейлист
+        '404':
+          description: Плейлист или трек не найден
+        '500':
+          description: Ошибка сервера
+
+  /playlists/{playlistId}/tracks/{trackId}:
+    delete:
+      summary: Удалить трек из плейлиста
+      operationId: removeTrackFromPlaylist
+      tags:
+        - playlists
+      parameters:
+        - name: playlistId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: trackId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Трек удален из плейлиста
+        '404':
+          description: Плейлист или трек не найден
+        '500':
+          description: Ошибка сервера
+
+  /genres:
+    get:
+      summary: Получить список всех жанров
+      operationId: listAllGenres
+      tags:
+        - genres
+      responses:
+        '200':
+          description: Список жанров
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Genre'
+        '500':
+          description: Ошибка сервера
+    
+    post:
+      summary: Создать новый жанр
+      operationId: createGenre
+      tags:
+        - genres
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Rock"
+              required:
+                - name
+      responses:
+        '201':
+          description: Жанр успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Genre'
+        '400':
+          description: Некорректные данные запроса
+        '500':
+          description: Ошибка сервера
+
+  /genres/tracks/{id}:
+    get:
+      summary: Получить жанры для трека
+      operationId: getGenresByTrack
+      tags:
+        - genres
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Список жанров для трека
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Genre'
+        '404':
+          description: Трек не найден
+        '500':
+          description: Ошибка сервера
+
+  /genres/tracks/{trackId}/genres:
+    post:
+      summary: Назначить жанр треку
+      operationId: assignGenreToTrack
+      tags:
+        - genres
+      parameters:
+        - name: trackId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                genre_id:
+                  type: string
+                  format: uuid
+              required:
+                - genre_id
+      responses:
+        '200':
+          description: Жанр назначен треку
+        '404':
+          description: Трек или жанр не найден
+        '500':
+          description: Ошибка сервера
+
+  /genres/tracks/{trackId}/genres/{genreId}:
+    delete:
+      summary: Удалить жанр у трека
+      operationId: removeGenreFromTrack
+      tags:
+        - genres
+      parameters:
+        - name: trackId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: genreId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Жанр удален у трека
+        '404':
+          description: Трек или жанр не найден
+        '500':
+          description: Ошибка сервера
+
+  /history:
+    get:
+      summary: Получить историю прослушиваний пользователя
+      operationId: getUserHistory
+      tags:
+        - history
+      responses:
+        '200':
+          description: История прослушиваний пользователя
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ListeningHistory'
+        '401':
+          description: Не авторизован
+        '500':
+          description: Ошибка сервера
+
+  /history/recent:
+    get:
+      summary: Получить недавние прослушивания
+      operationId: getRecentPlays
+      tags:
+        - history
+      parameters:
+        - name: hours
+          in: query
+          schema:
+            type: integer
+            default: 24
+            example: 24
+      responses:
+        '200':
+          description: Недавние прослушивания
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ListeningHistory'
+        '401':
+          description: Не авторизован
+        '500':
+          description: Ошибка сервера
+
+  /history/tracks/{trackId}:
+    post:
+      summary: Записать прослушивание трека
+      operationId: recordPlayback
+      tags:
+        - history
+      parameters:
+        - name: trackId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Прослушивание записано
+        '401':
+          description: Не авторизован
+        '404':
+          description: Трек не найден
+        '500':
+          description: Ошибка сервера
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        login:
+          type: string
+        permission:
+          type: string
+          enum: [user, admin, moderator]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - login
+        - permission
+        - created_at
+        - updated_at
+    
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - token
+        - expires_at
+    
+    Track:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        artist:
+          type: string
+        duration:
+          type: integer
+          description: Продолжительность трека в секундах
+        file_path:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - duration
+    
+    Album:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        release_date:
+          type: string
+          format: date-time
+        cover_url:
+          type: string
+      required:
+        - id
+        - title
+        - release_date
+    
+    Playlist:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - user_id
+        - name
+        - created_at
+    
+    PlaylistTrack:
+      type: object
+      properties:
+        playlist:
+          $ref: '#/components/schemas/Playlist'
+        tracks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'
+
+    Genre:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+        - id
+        - name
+    
+    ListeningHistory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        track_id:
+          type: string
+          format: uuid
+        listened_at:
+          type: string
+          format: date-time
+        track:
+          $ref: '#/components/schemas/Track'
+      required:
+        - id
+        - user_id
+        - track_id
+        - listened_at 
