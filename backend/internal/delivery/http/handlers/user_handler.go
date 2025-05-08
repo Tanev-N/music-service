@@ -5,6 +5,7 @@ import (
 	"music-service/internal/models"
 	"music-service/internal/usecases/interfaces"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -25,13 +26,31 @@ type registerRequest struct {
 	Password string `json:"password"`
 }
 
+type UserResponse struct {
+	ID         string    `json:"id"`
+	Login      string    `json:"login"`
+	Permission string    `json:"permission"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+func toUserResponse(user *models.User) UserResponse {
+	return UserResponse{
+		ID:         user.ID.String(),
+		Login:      user.Login,
+		Permission: string(user.Permission),
+		CreatedAt:  user.CreatedAt,
+		UpdatedAt:  user.UpdatedAt,
+	}
+}
+
 type authRequest struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
 }
 
 type authResponse struct {
-	User    *models.User    `json:"user"`
+	User    UserResponse    `json:"user"`
 	Session *models.Session `json:"session"`
 }
 
@@ -73,7 +92,7 @@ func (h *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, user)
+	writeJSON(w, http.StatusCreated, toUserResponse(user))
 }
 
 func (h *UserHandler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +109,7 @@ func (h *UserHandler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, authResponse{
-		User:    user,
+		User:    toUserResponse(user),
 		Session: session,
 	})
 }
@@ -109,7 +128,7 @@ func (h *UserHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, user)
+	writeJSON(w, http.StatusOK, toUserResponse(user))
 }
 
 func (h *UserHandler) UpdateUserPermissions(w http.ResponseWriter, r *http.Request) {
