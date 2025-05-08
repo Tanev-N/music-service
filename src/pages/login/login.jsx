@@ -6,7 +6,7 @@ import styles from './login.module.css'
 import { useState } from "react";
 
 const LoginPage = () => {
-    const [form, setForm] = useState({ username: "", password: "" });
+    const [form, setForm] = useState({ login: "", password: "" });
 
     const onChange = (e) => {
         const { name, value } = e.target;
@@ -16,9 +16,9 @@ const LoginPage = () => {
         }));
     };
 
-    const onSubmit = (e) => {
+    const onSubmit = async(e) => {
         e.preventDefault();
-        console.log(form);
+        const response = await Login(form.login, form.password);
     };
 
     return (
@@ -27,12 +27,12 @@ const LoginPage = () => {
                 <h3>Личный кабинет</h3>
                 <Input
                     text="Логин"
-                    name="username"
+                    name="login"
                     label="Логин"
                     type="text"
-                    autoComplete="username"
+                    autoComplete="login"
                     required
-                    value={form.username}
+                    value={form.login}
                     onChange={onChange}
                 />
                 <Input

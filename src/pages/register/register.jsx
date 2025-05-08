@@ -3,6 +3,9 @@ import { Input } from "@components/input/input";
 import { Button } from "@components/button/button";
 import styles from "@pages/login/login.module.css";
 import { Register } from "./register-api";
+import { AuthProvider } from "@/features/auth-provider/auth-provider";
+import { Navigate } from "react-router";
+
 const RegisterPage = () => {
     const [form, setForm] = useState({
         login: "",
@@ -27,8 +30,14 @@ const RegisterPage = () => {
         }
         else {
             setErrors({ ...errors, repeatPassword:"" });
-            answer = await Register(form.login, form.password);
-            console.log(answer)
+            const response = await Register(form.login, form.password);
+            if (response.ok) {
+                const {login, permission} = response.json()
+                // Вот тут нужно использовать Auth провайдер и редиректить на /
+            }
+            else {
+
+            }
         }
         
     };

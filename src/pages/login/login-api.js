@@ -1,8 +1,8 @@
 import {domain} from '@api/api'
 
 
-const Login = (login, password) => {
-    return fetch(`${domain}/login`, {
+const Login = async (login, password) => {
+    return fetch(`${domain}/user/auth`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
