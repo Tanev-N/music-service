@@ -21,6 +21,12 @@ func NewUserHandler(userUseCase interfaces.UserUseCase) *UserHandler {
 	}
 }
 
+// Проверка прав администратора
+func (h *UserHandler) isAdmin(r *http.Request) bool {
+	permission := r.Header.Get("X-User-Permission")
+	return permission == string(models.AdminPermission)
+}
+
 type registerRequest struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
@@ -142,6 +148,11 @@ func (h *UserHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) UpdateUserPermissions(w http.ResponseWriter, r *http.Request) {
+	if !h.isAdmin(r) {
+		writeError(w, http.StatusForbidden, "Доступ запрещен: требуются права администратора")
+		return
+	}
+
 	vars := mux.Vars(r)
 	userID, err := uuid.Parse(vars["id"])
 	if err != nil {
@@ -174,6 +185,12 @@ func (h *UserHandler) UpdateUserPermissions(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	// Проверяем права администратора
+	if !h.isAdmin(r) {
+		writeError(w, http.StatusForbidden, "Доступ запрещен: требуются права администратора")
+		return
+	}
+
 	vars := mux.Vars(r)
 	userID, err := uuid.Parse(vars["id"])
 	if err != nil {

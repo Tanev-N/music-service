@@ -11,4 +11,5 @@ type SessionRepository interface {
 	GetSession(sessionID string) (*models.Session, error)
 	DeleteSession(sessionID string) error
 	DeleteAllForUser(userID uuid.UUID) error
+	GetSessionByToken(token string) (*models.Session, *models.User, error)
 }

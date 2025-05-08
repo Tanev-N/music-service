@@ -25,7 +25,7 @@ func NewRepository(cfg db.Config) (*Repository, error) {
 
 	return &Repository{
 		User:     postgres.NewUserRepository(db),
-		Track:    postgres.NewTrackRepository(db),
+		Track:    postgres.NewTrackRepository(db, cfg.TracksDir),
 		Album:    postgres.NewAlbumRepository(db),
 		Playlist: postgres.NewPlaylistRepository(db),
 		Genre:    postgres.NewGenreRepository(db),
@@ -34,10 +34,10 @@ func NewRepository(cfg db.Config) (*Repository, error) {
 	}, nil
 }
 
-func NewRepositoryWithDB(db *sql.DB) *Repository {
+func NewRepositoryWithDB(db *sql.DB, tracksDir string) *Repository {
 	return &Repository{
 		User:     postgres.NewUserRepository(db),
-		Track:    postgres.NewTrackRepository(db),
+		Track:    postgres.NewTrackRepository(db, tracksDir),
 		Album:    postgres.NewAlbumRepository(db),
 		Playlist: postgres.NewPlaylistRepository(db),
 		Genre:    postgres.NewGenreRepository(db),

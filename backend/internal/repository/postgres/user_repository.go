@@ -39,6 +39,28 @@ func (r *UserRepository) FindByID(id uuid.UUID) (*models.User, error) {
 	return &user, nil
 }
 
+// FindByLogin finds a user by exact login match
+func (r *UserRepository) FindByLogin(login string) (*models.User, error) {
+	var user models.User
+	var permissionStr string
+
+	query := `SELECT id, login, password, permission, created_at, updated_at FROM users WHERE login = $1`
+	err := r.db.QueryRow(query, login).Scan(
+		&user.ID,
+		&user.Login,
+		&user.Password,
+		&permissionStr,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	user.Permission = models.Permission(permissionStr)
+	return &user, nil
+}
+
 func (r *UserRepository) Save(user *models.User) error {
 	query := `
 		INSERT INTO users (id, login, password, permission, created_at, updated_at) 

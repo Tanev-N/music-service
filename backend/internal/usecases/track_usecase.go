@@ -3,29 +3,38 @@ package usecases
 import (
 	"errors"
 	"fmt"
+	"io"
+	"log"
 	"music-service/internal/models"
 	"music-service/internal/repository/interfaces"
 	usecaseInterfaces "music-service/internal/usecases/interfaces"
+	"path/filepath"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 type trackUseCase struct {
-	trackRepo   interfaces.TrackRepository
-	historyRepo interfaces.HistoryRepository
-	albumRepo   interfaces.AlbumRepository
+	trackRepo     interfaces.TrackRepository
+	historyRepo   interfaces.HistoryRepository
+	albumRepo     interfaces.AlbumRepository
+	maxFileSizeMB int
+	allowedTypes  []string
 }
 
 func NewTrackUseCase(
 	trackRepo interfaces.TrackRepository,
 	historyRepo interfaces.HistoryRepository,
 	albumRepo interfaces.AlbumRepository,
+	maxFileSizeMB int,
+	allowedTypes []string,
 ) usecaseInterfaces.TrackUseCase {
 	return &trackUseCase{
-		trackRepo:   trackRepo,
-		historyRepo: historyRepo,
-		albumRepo:   albumRepo,
+		trackRepo:     trackRepo,
+		historyRepo:   historyRepo,
+		albumRepo:     albumRepo,
+		maxFileSizeMB: maxFileSizeMB,
+		allowedTypes:  allowedTypes,
 	}
 }
 
@@ -63,12 +72,37 @@ func (uc *trackUseCase) PlayTrack(userID, trackID uuid.UUID) error {
 	return nil
 }
 
-func (uc *trackUseCase) GetTrackDetails(trackID uuid.UUID) (*models.Track, error) {
-	track, err := uc.trackRepo.FindByID(trackID)
+func (uc *trackUseCase) GetTrackDetails(id uuid.UUID) (*models.TrackDetails, error) {
+	track, err := uc.trackRepo.FindByID(id)
 	if err != nil {
 		return nil, fmt.Errorf("track not found: %w", err)
 	}
-	return track, nil
+
+	var album *models.Album
+	if track.AlbumID != uuid.Nil {
+		album, err = uc.albumRepo.FindByID(track.AlbumID)
+		if err != nil {
+			log.Printf("could not find album for track %s: %v", id, err)
+		}
+	}
+
+	genres, err := uc.trackRepo.GetGenresForTrack(id)
+	if err != nil {
+		log.Printf("could not find genres for track %s: %v", id, err)
+	}
+
+	playCount, err := uc.historyRepo.GetPlayCount(id)
+	if err != nil {
+		log.Printf("could not get play count for track %s: %v", id, err)
+	}
+
+	return &models.TrackDetails{
+		Track:     *track,
+		Album:     album,
+		Genres:    genres,
+		PlayCount: playCount,
+		Duration:  track.Duration,
+	}, nil
 }
 
 func (uc *trackUseCase) UpdateTrackMetadata(trackID uuid.UUID, metadata map[string]interface{}) error {
@@ -107,8 +141,67 @@ func (uc *trackUseCase) DeleteTrack(trackID uuid.UUID) error {
 	return uc.trackRepo.Delete(trackID)
 }
 
-func formatDuration(seconds int) string {
-	minutes := seconds / 60
-	remainingSeconds := seconds % 60
-	return fmt.Sprintf("%d:%02d", minutes, remainingSeconds)
+func (uc *trackUseCase) UploadTrack(fileReader io.Reader, fileSize int64, metadata models.TrackUploadMetadata) (*models.Track, error) {
+	maxSizeBytes := int64(uc.maxFileSizeMB * 1024 * 1024)
+	if fileSize > maxSizeBytes {
+		return nil, fmt.Errorf("размер файла превышает максимально допустимый (%d МБ)", uc.maxFileSizeMB)
+	}
+
+	if metadata.Title == "" {
+		return nil, errors.New("название трека не может быть пустым")
+	}
+
+	if metadata.ArtistName == "" {
+		return nil, errors.New("имя исполнителя не может быть пустым")
+	}
+
+	if metadata.AlbumID == uuid.Nil {
+		return nil, errors.New("необходимо указать альбом для трека")
+	}
+
+	if _, err := uc.albumRepo.FindByID(metadata.AlbumID); err != nil {
+		return nil, fmt.Errorf("альбом не найден: %w", err)
+	}
+
+	trackID := uuid.New()
+
+	filePath, err := uc.trackRepo.SaveTrackFile(trackID, fileReader, fileSize)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при сохранении файла: %w", err)
+	}
+
+	now := time.Now()
+	track := &models.Track{
+		ID:         trackID,
+		Title:      metadata.Title,
+		Duration:   metadata.Duration,
+		FilePath:   filePath,
+		AlbumID:    metadata.AlbumID,
+		ArtistName: metadata.ArtistName,
+		CoverURL:   metadata.CoverURL,
+		AddedDate:  now,
+		UpdatedAt:  now,
+		PlayCount:  0,
+	}
+
+	if err := uc.trackRepo.Save(track); err != nil {
+		return nil, fmt.Errorf("ошибка при сохранении метаданных трека: %w", err)
+	}
+
+	return track, nil
+}
+
+func (uc *trackUseCase) GetTrackFilePath(trackID uuid.UUID) (string, error) {
+	track, err := uc.trackRepo.FindByID(trackID)
+	if err != nil {
+		return "", fmt.Errorf("трек не найден: %w", err)
+	}
+
+	tracksDir := uc.trackRepo.GetStorageDir()
+	if tracksDir == "" {
+		return "", errors.New("путь к директории треков не настроен")
+	}
+
+	fullPath := filepath.Join(tracksDir, track.FilePath)
+	return fullPath, nil
 }

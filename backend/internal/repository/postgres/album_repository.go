@@ -20,10 +20,11 @@ func NewAlbumRepository(db *sql.DB) interfaces.AlbumRepository {
 
 func (r *AlbumRepository) FindByID(id uuid.UUID) (*models.Album, error) {
 	var album models.Album
-	query := `SELECT id, title, release_date, cover_url, created_at, updated_at FROM albums WHERE id = $1`
+	query := `SELECT id, title, artist, release_date, cover_url, created_at, updated_at FROM albums WHERE id = $1`
 	err := r.db.QueryRow(query, id).Scan(
 		&album.ID,
 		&album.Title,
+		&album.Artist,
 		&album.ReleaseDate,
 		&album.CoverURL,
 		&album.CreatedAt,
@@ -37,14 +38,15 @@ func (r *AlbumRepository) FindByID(id uuid.UUID) (*models.Album, error) {
 
 func (r *AlbumRepository) Save(album *models.Album) error {
 	query := `
-		INSERT INTO albums (id, title, release_date, cover_url, created_at, updated_at) 
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO albums (id, title, artist, release_date, cover_url, created_at, updated_at) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		ON CONFLICT (id) DO UPDATE 
-		SET title = $2, release_date = $3, cover_url = $4, updated_at = $6
+		SET title = $2, artist = $3, release_date = $4, cover_url = $5, updated_at = $7
 	`
 	_, err := r.db.Exec(query,
 		album.ID,
 		album.Title,
+		album.Artist,
 		album.ReleaseDate,
 		album.CoverURL,
 		album.CreatedAt,
@@ -111,7 +113,7 @@ func (r *AlbumRepository) RemoveTrackFromAlbum(albumID, trackID uuid.UUID) error
 
 func (r *AlbumRepository) ListAll() ([]*models.Album, error) {
 	var albums []*models.Album
-	query := `SELECT id, title, release_date, cover_url, created_at, updated_at FROM albums`
+	query := `SELECT id, title, artist, release_date, cover_url, created_at, updated_at FROM albums`
 
 	rows, err := r.db.Query(query)
 	if err != nil {
@@ -124,6 +126,7 @@ func (r *AlbumRepository) ListAll() ([]*models.Album, error) {
 		err := rows.Scan(
 			&album.ID,
 			&album.Title,
+			&album.Artist,
 			&album.ReleaseDate,
 			&album.CoverURL,
 			&album.CreatedAt,

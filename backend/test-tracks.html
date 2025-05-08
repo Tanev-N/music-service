@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тестирование трекового API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input, select {
+            margin: 10px 0;
+            padding: 8px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .track-item {
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin: 5px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .error {
+            color: red;
+            margin: 10px 0;
+        }
+        .success {
+            color: green;
+            margin: 10px 0;
+        }
+        audio {
+            width: 100%;
+            margin: 10px 0;
+        }
+        #results {
+            white-space: pre-wrap;
+            background-color: #f8f8f8;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .hidden {
+            display: none;
+        }
+        /* Стили для отображения альбомов */
+        .albums-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .album-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s;
+        }
+        .album-card:hover {
+            transform: translateY(-5px);
+        }
+        .album-cover {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .album-cover img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        .album-info {
+            flex-grow: 1;
+        }
+        .album-info h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .album-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+        /* Стили для деталей альбома */
+        .album-details {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .album-header {
+            display: flex;
+            margin-bottom: 30px;
+            margin-top: 20px;
+        }
+        .album-header .album-cover {
+            flex: 0 0 250px;
+            margin-right: 30px;
+        }
+        .album-header .album-info {
+            flex: 1;
+        }
+        .tracks-list {
+            list-style: none;
+            padding: 0;
+        }
+        .tracks-list .track-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        #back-to-albums {
+            padding: 8px 16px;
+            background-color: #f0f0f0;
+            color: #333;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        #back-to-albums:hover {
+            background-color: #e0e0e0;
+        }
+        /* Кнопки для действий с альбомами и треками */
+        .view-album-btn, .delete-album-btn {
+            padding: 6px 12px;
+            margin-top: 10px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .view-album-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .delete-album-btn {
+            background-color: #f44336;
+            color: white;
+        }
+        .view-album-btn:hover {
+            background-color: #45a049;
+        }
+        .delete-album-btn:hover {
+            background-color: #d32f2f;
+        }
+        /* Стили для списка жанров */
+        .genres-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .genre-item {
+            background-color: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .track-genres {
+            margin-top: 10px;
+        }
+        
+        .genre-tag {
+            display: inline-block;
+            background-color: #e0e8ff;
+            color: #3366cc;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+        
+        .assign-genre-btn {
+            background-color: #ddf2e8;
+            color: #28a745;
+            border: 1px solid #28a745;
+            border-radius: 4px;
+            padding: 3px 8px;
+            cursor: pointer;
+            margin-top: 5px;
+            font-size: 12px;
+        }
+        
+        /* Стили для диалога выбора жанра */
+        .genre-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        }
+        
+        .genre-select-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .genre-select-container select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        
+        .genre-select-container button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .genre-select-container button:hover {
+            background-color: #45a049;
+        }
+        
+        /* Стили для списка треков */
+        .tracks-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .track-item {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+        
+        .track-info h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .track-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .track-actions button {
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .play-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        
+        .delete-track-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+        }
+        
+        h4 {
+            margin: 10px 0 5px 0;
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тестирование API для треков</h1>
+
+    <div class="container">
+        <h2>Аутентификация (получение токена)</h2>
+        <form id="auth-form">
+            <div>
+                <label for="login">Логин:</label>
+                <input type="text" id="login" name="login" required>
+            </div>
+            <div>
+                <label for="password">Пароль:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">Войти</button>
+            <button type="button" onclick="useDirectToken()">Использовать прямой токен админа</button>
+        </form>
+        <div id="auth-result"></div>
+    </div>
+
+    <div class="container">
+        <h2>Создание альбома (для загрузки треков)</h2>
+        <form id="album-form">
+            <div>
+                <label for="album-title">Название альбома:</label>
+                <input type="text" id="album-title" name="title" required>
+            </div>
+            <div>
+                <label for="album-artist">Исполнитель альбома:</label>
+                <input type="text" id="album-artist" name="artist" required>
+            </div>
+            <div>
+                <label for="album-release-date">Дата релиза:</label>
+                <input type="date" id="album-release-date" name="release_date" required>
+            </div>
+            <div>
+                <label for="album-cover">URL обложки альбома:</label>
+                <input type="url" id="album-cover" name="cover_url">
+            </div>
+            <button type="submit">Создать альбом</button>
+        </form>
+        <div id="album-result"></div>
+        <div id="albums-list" class="hidden">
+            <h3>Доступные альбомы:</h3>
+            <select id="album-select">
+                <option value="">-- Выберите альбом --</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Загрузка трека (только для админов)</h2>
+        <form id="upload-form">
+            <div>
+                <label for="track-file">Файл трека (MP3):</label>
+                <input type="file" id="track-file" name="file" accept="audio/mpeg,audio/mp3" required>
+            </div>
+            <div>
+                <label for="track-title">Название трека:</label>
+                <input type="text" id="track-title" name="title" required>
+            </div>
+            <div>
+                <label for="artist-name">Исполнитель:</label>
+                <input type="text" id="artist-name" name="artist_name" required>
+            </div>
+            <div>
+                <label for="album-id">Альбом:</label>
+                <select id="album-id" name="album_id" required>
+                    <option value="">-- Выберите альбом --</option>
+                </select>
+            </div>
+            <div>
+                <label for="duration">Длительность (в секундах):</label>
+                <input type="number" id="duration" name="duration" value="180" required>
+            </div>
+            <div>
+                <label for="cover-url">URL обложки (опционально):</label>
+                <input type="url" id="cover-url" name="cover_url">
+            </div>
+            <button type="submit">Загрузить трек</button>
+        </form>
+        <div id="upload-result"></div>
+    </div>
+
+    <div class="container">
+        <h2>Список всех альбомов</h2>
+        <button id="refresh-albums">Обновить список альбомов</button>
+        <div id="albums-container"></div>
+    </div>
+
+    <div class="container">
+        <h2>Управление жанрами</h2>
+        <div id="genre-management">
+            <div class="genre-creation">
+                <h3>Создание нового жанра</h3>
+                <form id="genre-form">
+                    <div>
+                        <label for="genre-name">Название жанра:</label>
+                        <input type="text" id="genre-name" name="name" required>
+                    </div>
+                    <button type="submit">Создать жанр</button>
+                </form>
+                <div id="genre-result"></div>
+            </div>
+            
+            <div class="genre-list">
+                <h3>Список доступных жанров</h3>
+                <button id="refresh-genres">Обновить список жанров</button>
+                <div id="genres-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Поиск треков</h2>
+        <form id="search-form">
+            <div>
+                <label for="search-query">Поисковый запрос:</label>
+                <input type="text" id="search-query" name="query" required minlength="3">
+            </div>
+            <button type="submit">Искать</button>
+        </form>
+        <div id="search-results"></div>
+    </div>
+
+    <div class="container hidden" id="player-container">
+        <h2>Проигрыватель</h2>
+        <div id="track-info"></div>
+        <audio id="audio-player" controls></audio>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8080/api/v1";
+        let authToken = localStorage.getItem('authToken');
+        let userPermission = localStorage.getItem('userPermission');
+
+        // Заполняем поля по умолчанию
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('login').value = 'admin';
+            document.getElementById('password').value = 'adminpass';
+            console.log("Фронтенд инициализирован. Версия от 2025-05-08");
+            console.log("API URL:", API_URL);
+            
+            // Проверяем наличие токена
+            if (authToken) {
+                console.log("Найден сохраненный токен авторизации");
+                document.getElementById('auth-result').innerHTML = 
+                    `<p class="success">Пользователь авторизован. Права: ${userPermission}</p>`;
+                
+                // Загружаем начальные данные
+                loadAlbums();
+                loadGenres();
+            } else {
+                console.log("Токен не найден, требуется авторизация");
+            }
+        });
+
+        // Функция для установки прямого токена без авторизации
+        function useDirectToken() {
+            authToken = '33333333-3333-3333-3333-333333333333';
+            userPermission = 'admin';
+            localStorage.setItem('authToken', authToken);
+            localStorage.setItem('userPermission', userPermission);
+            document.getElementById('auth-result').innerHTML = 
+                `<p class="success">Токен установлен напрямую! Права: ${userPermission}</p>`;
+        }
+
+        // Если уже есть токен, показываем его
+        if (authToken) {
+            document.getElementById('auth-result').innerHTML = 
+                `<p class="success">Пользователь авторизован. Права: ${userPermission}</p>`;
+        }
+
+        // Функция для выполнения fetch с обработкой ошибок
+        async function safeFetch(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    mode: 'cors',
+                    headers: {
+                        ...options.headers,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                // Проверяем код ответа
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ошибка ${response.status}: ${errorText}`);
+                }
+                
+                // Проверяем наличие данных в ответе
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return await response.json();
+                } else {
+                    return await response.text();
+                }
+            } catch (error) {
+                console.error('Ошибка запроса:', error);
+                throw error;
+            }
+        }
+
+        // Форма аутентификации
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const login = document.getElementById('login').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/users/auth`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ login, password })
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ошибка ${response.status}: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Выводим информацию о токене для отладки
+                console.log('Полученные данные:', data);
+                console.log('Токен:', data.session.token);
+                
+                authToken = data.session.token;
+                userPermission = data.user.permission;
+                localStorage.setItem('authToken', authToken);
+                localStorage.setItem('userPermission', userPermission);
+                document.getElementById('auth-result').innerHTML = 
+                    `<p class="success">Успешная авторизация! Права: ${userPermission}</p>`;
+            } catch (error) {
+                console.error('Ошибка при авторизации:', error);
+                document.getElementById('auth-result').innerHTML = 
+                    `<p class="error">Ошибка: ${error.message}</p>`;
+            }
+        });
+
+        // Функция загрузки трека
+        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!authToken) {
+                document.getElementById('upload-result').innerHTML = 
+                    `<p class="error">Необходимо авторизоваться</p>`;
+                return;
+            }
+            
+            const formData = new FormData();
+            const fileInput = document.getElementById('track-file');
+            
+            if (fileInput.files.length === 0) {
+                document.getElementById('upload-result').innerHTML = 
+                    `<p class="error">Выберите файл для загрузки</p>`;
+                return;
+            }
+            
+            // Проверка файла
+            const file = fileInput.files[0];
+            console.log('Тип файла:', file.type);
+            
+            // Если тип файла не распознан, установим его вручную
+            if (!file.type || file.type === '') {
+                console.log('Тип файла не распознан, устанавливаем audio/mpeg');
+                // Создаем новый File объект с правильным типом
+                const newFile = new File([file], file.name, { type: 'audio/mpeg' });
+                formData.append('file', newFile);
+            } else {
+                formData.append('file', file);
+            }
+            
+            formData.append('title', document.getElementById('track-title').value);
+            formData.append('artist_name', document.getElementById('artist-name').value);
+            formData.append('duration', document.getElementById('duration').value);
+            
+            // Добавляем ID альбома, если он выбран
+            const albumId = document.getElementById('album-id').value;
+            if (albumId) {
+                formData.append('album_id', albumId);
+            }
+            
+            const coverUrl = document.getElementById('cover-url').value;
+            if (coverUrl) {
+                formData.append('cover_url', coverUrl);
+            }
+            
+            // Отладочный вывод
+            console.log('Отправка запроса с токеном:', authToken);
+            console.log('Данные формы:', {
+                title: document.getElementById('track-title').value,
+                artist_name: document.getElementById('artist-name').value,
+                duration: document.getElementById('duration').value,
+                album_id: albumId || 'Не выбран',
+                file: fileInput.files[0] ? fileInput.files[0].name : 'Нет файла'
+            });
+            
+            try {
+                // Важно! Убедимся, что формат заголовка правильный: "Bearer [token]"
+                const authHeader = `Bearer ${authToken.trim()}`;
+                console.log('Заголовок Authorization:', authHeader);
+                
+                // Добавим отладочный вывод для формы
+                for (let pair of formData.entries()) {
+                    console.log(pair[0] + ': ' + pair[1]);
+                }
+                
+                const response = await fetch(`${API_URL}/tracks`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': authHeader
+                    },
+                    body: formData,
+                    credentials: 'include'  // Включаем отправку куки (если есть)
+                });
+                
+                console.log('Код ответа:', response.status);
+                console.log('Заголовки ответа:', Object.fromEntries([...response.headers]));
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Ответ при создании трека:', data); // Добавляем логирование
+                    document.getElementById('upload-result').innerHTML = 
+                        `<p class="success">Трек успешно загружен! ID: ${data.id || data.ID}</p>`;
+                    
+                    // Очищаем форму после успешной загрузки
+                    document.getElementById('track-title').value = '';
+                    document.getElementById('artist-name').value = '';
+                    document.getElementById('cover-url').value = '';
+                    document.getElementById('track-file').value = '';
+                    
+                    // Даем пользователю возможность сразу искать загруженный трек
+                    document.getElementById('search-query').value = document.getElementById('track-title').value;
+                } else {
+                    const text = await response.text();
+                    document.getElementById('upload-result').innerHTML = 
+                        `<p class="error">Ошибка ${response.status}: ${text || response.statusText}</p>`;
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке трека:', error);
+                document.getElementById('upload-result').innerHTML = 
+                    `<p class="error">Ошибка: ${error.message}</p>`;
+            }
+        });
+
+        // Поиск треков
+        document.getElementById('search-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = document.getElementById('search-query').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/tracks?q=${encodeURIComponent(query)}`);
+                
+                if (response.ok) {
+                    const tracks = await response.json();
+                    console.log('Результаты поиска:', tracks); // Логирование результатов
+                    
+                    const resultsContainer = document.getElementById('search-results');
+                    
+                    if (!tracks || tracks.length === 0) {
+                        resultsContainer.innerHTML = '<p>Треки не найдены</p>';
+                        return;
+                    }
+                    
+                    resultsContainer.innerHTML = '<h3>Результаты поиска:</h3>';
+                    
+                    displayTracks(tracks);
+                } else {
+                    const text = await response.text();
+                    document.getElementById('search-results').innerHTML = 
+                        `<p class="error">Ошибка: ${text || response.statusText}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('search-results').innerHTML = 
+                    `<p class="error">Ошибка: ${error.message}</p>`;
+            }
+        });
+
+        // Воспроизведение трека
+        async function playTrack(e) {
+            const trackId = e.target.dataset.id;
+            
+            try {
+                // Получаем информацию о треке
+                const response = await fetch(`${API_URL}/tracks/${trackId}`);
+                
+                if (response.ok) {
+                    const track = await response.json();
+                    console.log('Информация о треке:', track); // Добавляем логирование
+                    
+                    const playerContainer = document.getElementById('player-container');
+                    playerContainer.classList.remove('hidden');
+                    
+                    document.getElementById('track-info').innerHTML = `
+                        <h3>${track.title}</h3>
+                        <p>Исполнитель: ${track.artist_name}</p>
+                        ${track.album_title ? `<p>Альбом: ${track.album_title}</p>` : ''}
+                        <p>Прослушиваний: ${track.play_count}</p>
+                    `;
+                    
+                    const audioPlayer = document.getElementById('audio-player');
+                    audioPlayer.src = `${API_URL}/tracks/${trackId}/stream`;
+                    audioPlayer.play();
+                    
+                    // Запись прослушивания, если авторизован
+                    if (authToken) {
+                        fetch(`${API_URL}/tracks/${trackId}/play`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${authToken}`
+                            }
+                        });
+                    }
+                } else {
+                    alert('Ошибка при получении информации о треке');
+                }
+            } catch (error) {
+                alert(`Ошибка: ${error.message}`);
+            }
+        }
+
+        // Функция удаления трека
+        async function deleteTrack(e) {
+            if (!confirm('Вы уверены, что хотите удалить этот трек?')) {
+                return;
+            }
+            
+            const trackId = e.target.dataset.trackId;
+            
+            try {
+                const response = await fetch(`${API_URL}/tracks/${trackId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    alert('Трек успешно удален');
+                    // Удаляем элемент из DOM
+                    const trackItem = e.target.closest('.track-item');
+                    if (trackItem) {
+                        trackItem.remove();
+                    }
+                } else {
+                    const text = await response.text();
+                    alert(`Ошибка при удалении трека: ${text || response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Ошибка при удалении трека:', error);
+                alert(`Ошибка: ${error.message}`);
+            }
+        }
+
+        // Создание альбома и загрузка списка альбомов
+        document.getElementById('album-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!authToken) {
+                document.getElementById('album-result').innerHTML = 
+                    `<p class="error">Необходимо авторизоваться</p>`;
+                return;
+            }
+            
+            const titleEl = document.getElementById('album-title');
+            const artistEl = document.getElementById('album-artist');
+            
+            if (!titleEl.value.trim()) {
+                document.getElementById('album-result').innerHTML = 
+                    `<p class="error">Название альбома не может быть пустым</p>`;
+                return;
+            }
+            
+            if (!artistEl.value.trim()) {
+                document.getElementById('album-result').innerHTML = 
+                    `<p class="error">Имя исполнителя не может быть пустым</p>`;
+                return;
+            }
+            
+            const albumData = {
+                title: titleEl.value,
+                artist: artistEl.value,
+                release_date: document.getElementById('album-release-date').value ? 
+                             new Date(document.getElementById('album-release-date').value).toISOString() : 
+                             new Date().toISOString(),
+                cover_url: document.getElementById('album-cover').value || null
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/albums`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(albumData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('album-result').innerHTML = 
+                        `<p class="success">Альбом успешно создан! ID: ${data.id}</p>`;
+                    
+                    // Очищаем поля формы
+                    document.getElementById('album-title').value = '';
+                    document.getElementById('album-artist').value = '';
+                    document.getElementById('album-release-date').value = '';
+                    document.getElementById('album-cover').value = '';
+                    
+                    // Обновляем список альбомов
+                    loadAlbums();
+                } else {
+                    const text = await response.text();
+                    document.getElementById('album-result').innerHTML = 
+                        `<p class="error">Ошибка ${response.status}: ${text || response.statusText}</p>`;
+                }
+            } catch (error) {
+                console.error('Ошибка при создании альбома:', error);
+                document.getElementById('album-result').innerHTML = 
+                    `<p class="error">Ошибка: ${error.message}</p>`;
+            }
+        });
+        
+        // Загрузить список альбомов
+        async function loadAlbums() {
+            try {
+                const response = await fetch(`${API_URL}/albums`);
+                
+                if (response.ok) {
+                    const albums = await response.json();
+                    
+                    const albumSelect = document.getElementById('album-id');
+                    const albumsContainer = document.getElementById('albums-list');
+                    
+                    // Очищаем текущие опции, оставляя только первую (пустой выбор)
+                    albumSelect.innerHTML = '<option value="">-- Выберите альбом --</option>';
+                    
+                    // Добавляем альбомы
+                    albums.forEach(album => {
+                        const option = document.createElement('option');
+                        option.value = album.id;
+                        option.textContent = `${album.title} - ${album.artist}`;
+                        albumSelect.appendChild(option);
+                    });
+                    
+                    if (albums.length > 0) {
+                        albumsContainer.classList.remove('hidden');
+                    }
+                    
+                    // Обновляем также общий список альбомов
+                    displayAlbums(albums);
+                } else {
+                    console.error('Ошибка при загрузке альбомов:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке альбомов:', error);
+            }
+        }
+        
+        // Отображение списка альбомов
+        function displayAlbums(albums) {
+            const albumsContainer = document.getElementById('albums-container');
+            if (!albums || albums.length === 0) {
+                albumsContainer.innerHTML = '<p>Альбомы не найдены</p>';
+                return;
+            }
+            
+            let html = '<div class="albums-grid">';
+            albums.forEach(album => {
+                const releaseDate = new Date(album.release_date).toLocaleDateString();
+                html += `
+                    <div class="album-card">
+                        <div class="album-cover">
+                            <img src="${album.cover_url || 'https://via.placeholder.com/150'}" alt="${album.title}" width="150">
+                        </div>
+                        <div class="album-info">
+                            <h3>${album.title}</h3>
+                            <p>Исполнитель: ${album.artist}</p>
+                            <p>Дата выпуска: ${releaseDate}</p>
+                            <button class="view-album-btn" data-id="${album.id}">Просмотр альбома</button>
+                            ${userPermission === 'admin' ? 
+                                `<button class="delete-album-btn" data-id="${album.id}">Удалить альбом</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            albumsContainer.innerHTML = html;
+            
+            // Добавляем обработчики для кнопок
+            document.querySelectorAll('.view-album-btn').forEach(button => {
+                button.addEventListener('click', viewAlbumDetails);
+            });
+            
+            document.querySelectorAll('.delete-album-btn').forEach(button => {
+                button.addEventListener('click', deleteAlbum);
+            });
+        }
+        
+        // Просмотр деталей альбома
+        async function viewAlbumDetails(e) {
+            const albumId = e.target.dataset.id;
+            try {
+                const response = await fetch(`${API_URL}/albums/${albumId}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    // Отладочный вывод для проверки структуры данных
+                    console.log('Ответ API альбома:', data);
+                    
+                    const albumsContainer = document.getElementById('albums-container');
+                    const album = data;
+                    const tracks = data.tracks || [];
+                    console.log('Треки в альбоме:', tracks);
+                    console.log('Количество треков:', tracks.length);
+                    
+                    // Форматируем дату
+                    const releaseDate = new Date(album.release_date).toLocaleDateString();
+                    
+                    let html = `
+                        <div class="album-details">
+                            <button id="back-to-albums">« Назад к списку альбомов</button>
+                            <div class="album-header">
+                                <div class="album-cover">
+                                    <img src="${album.cover_url || 'https://via.placeholder.com/250'}" alt="${album.title}" width="250">
+                                </div>
+                                <div class="album-info">
+                                    <h2>${album.title}</h2>
+                                    <p>Исполнитель: ${album.artist}</p>
+                                    <p>Дата выпуска: ${releaseDate}</p>
+                                    <p>Создан: ${new Date(album.created_at).toLocaleString()}</p>
+                                </div>
+                            </div>
+                            <h3>Треки в альбоме:</h3>
+                    `;
+                    
+                    if (!tracks || tracks.length === 0) {
+                        html += '<p>В этом альбоме пока нет треков</p>';
+                    } else {
+                        html += '<ul class="tracks-list">';
+                        tracks.forEach(track => {
+                            console.log('Трек:', track);
+                            // Форматируем длительность в мин:сек
+                            const minutes = Math.floor(track.Duration / 60);
+                            const seconds = track.Duration % 60;
+                            const duration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                            
+                            html += `
+                                <li class="track-item">
+                                    <div>
+                                        <strong>${track.Title}</strong> - ${track.ArtistName} (${duration})
+                                    </div>
+                                    <div>
+                                        <button class="play-button" data-id="${track.ID}">Слушать</button>
+                                    </div>
+                                </li>
+                            `;
+                        });
+                        html += '</ul>';
+                    }
+                    
+                    html += '</div>';
+                    albumsContainer.innerHTML = html;
+                    
+                    // Добавляем обработчики
+                    document.querySelectorAll('.play-button').forEach(button => {
+                        button.addEventListener('click', playTrack);
+                    });
+                    
+                    document.getElementById('back-to-albums').addEventListener('click', () => {
+                        loadAlbums();
+                    });
+                } else {
+                    const errorText = await response.text();
+                    alert(`Ошибка: ${errorText || response.statusText}`);
+                }
+            } catch (error) {
+                alert(`Ошибка: ${error.message}`);
+            }
+        }
+        
+        // Удаление альбома
+        async function deleteAlbum(e) {
+            if (!confirm('Вы уверены, что хотите удалить этот альбом?')) {
+                return;
+            }
+            
+            const albumId = e.target.dataset.id;
+            
+            try {
+                const response = await fetch(`${API_URL}/albums/${albumId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    alert('Альбом успешно удален');
+                    loadAlbums();
+                } else {
+                    const text = await response.text();
+                    alert(`Ошибка: ${text || response.statusText}`);
+                }
+            } catch (error) {
+                alert(`Ошибка: ${error.message}`);
+            }
+        }
+        
+        // Обработчик кнопки обновления списка альбомов
+        document.getElementById('refresh-albums').addEventListener('click', loadAlbums);
+        
+        // Загрузить альбомы при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            if (authToken) {
+                loadAlbums();
+                loadGenres(); // Также загружаем список жанров при загрузке страницы
+            }
+            
+            // Устанавливаем текущую дату в поле даты релиза альбома
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            document.getElementById('album-release-date').value = formattedDate;
+        });
+
+        // Функции для работы с жанрами
+        
+        // Загрузить список жанров
+        async function loadGenres() {
+            try {
+                const response = await fetch(`${API_URL}/genres`);
+                
+                if (response.ok) {
+                    const genres = await response.json();
+                    console.log("Загруженные жанры:", genres); // Добавляем логирование
+                    displayGenres(genres);
+                } else {
+                    console.error('Ошибка при загрузке жанров:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке жанров:', error);
+            }
+        }
+        
+        // Отображение списка жанров
+        function displayGenres(genres) {
+            const genresContainer = document.getElementById('genres-container');
+            if (!genres || genres.length === 0) {
+                genresContainer.innerHTML = '<p>Жанры не найдены</p>';
+                return;
+            }
+            
+            // Сортируем жанры по алфавиту
+            genres.sort((a, b) => a.name.localeCompare(b.name));
+            
+            let html = '<div class="genres-list">';
+            genres.forEach(genre => {
+                html += `
+                    <div class="genre-item">
+                        <span>${genre.name}</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            genresContainer.innerHTML = html;
+        }
+        
+        // Создание нового жанра
+        document.getElementById('genre-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!authToken) {
+                document.getElementById('genre-result').innerHTML = 
+                    `<p class="error">Необходимо авторизоваться</p>`;
+                return;
+            }
+            
+            const name = document.getElementById('genre-name').value;
+            if (!name.trim()) {
+                document.getElementById('genre-result').innerHTML = 
+                    `<p class="error">Название жанра не может быть пустым</p>`;
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/genres`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ name })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('genre-result').innerHTML = 
+                        `<p class="success">Жанр успешно создан! ID: ${data.id}</p>`;
+                    
+                    // Очищаем поле ввода и обновляем список жанров
+                    document.getElementById('genre-name').value = '';
+                    loadGenres();
+                } else {
+                    const text = await response.text();
+                    document.getElementById('genre-result').innerHTML = 
+                        `<p class="error">Ошибка ${response.status}: ${text || response.statusText}</p>`;
+                }
+            } catch (error) {
+                console.error('Ошибка при создании жанра:', error);
+                document.getElementById('genre-result').innerHTML = 
+                    `<p class="error">Ошибка: ${error.message}</p>`;
+            }
+        });
+        
+        // Обработчик кнопки обновления списка жанров
+        document.getElementById('refresh-genres').addEventListener('click', loadGenres);
+        
+        // Функция для отображения жанров трека
+        async function showTrackGenres(trackId) {
+            try {
+                console.log(`Получаем жанры для трека ID: ${trackId}`);
+                const response = await fetch(`${API_URL}/genres/tracks/${trackId}`);
+                
+                if (response.ok) {
+                    const genres = await response.json();
+                    console.log(`Жанры для трека ${trackId}:`, genres);
+                    
+                    let html = '<div class="track-genres">';
+                    html += '<h4>Жанры трека:</h4>';
+                    
+                    if (!genres || genres.length === 0) {
+                        html += '<p>Жанры не назначены</p>';
+                    } else {
+                        genres.forEach(genre => {
+                            // Поддержка разных форматов JSON
+                            const genreName = genre.name || genre.Name;
+                            const genreId = genre.id || genre.ID;
+                            
+                            html += `<span class="genre-tag">${genreName}</span>`;
+                            
+                            if (userPermission === 'admin') {
+                                html += `
+                                    <a href="#" class="remove-genre" 
+                                       onclick="removeGenreFromTrack('${trackId}', '${genreId}'); return false;"
+                                       style="color:red;font-size:10px;margin-left:3px;text-decoration:none;"
+                                       title="Удалить жанр">×</a>
+                                `;
+                            }
+                        });
+                    }
+                    
+                    if (userPermission === 'admin') {
+                        html += `<div style="margin-top:8px;"><button class="assign-genre-btn" data-track-id="${trackId}">Добавить жанр</button></div>`;
+                    }
+                    
+                    html += '</div>';
+                    return html;
+                } else {
+                    console.error(`Ошибка при запросе жанров для трека ${trackId}: ${response.status}`);
+                    return '<p>Не удалось загрузить жанры</p>';
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке жанров трека:', error);
+                return '<p>Ошибка при загрузке жанров</p>';
+            }
+        }
+        
+        // Функция для удаления жанра у трека
+        async function removeGenreFromTrack(trackId, genreId) {
+            if (!confirm('Вы уверены, что хотите удалить этот жанр у трека?')) {
+                return;
+            }
+            
+            try {
+                console.log(`Удаляем жанр ${genreId} у трека ${trackId}`);
+                const response = await fetch(`${API_URL}/genres/tracks/${trackId}/genres/${genreId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    alert('Жанр успешно удален у трека');
+                    
+                    // Обновляем информацию о треке
+                    if (document.querySelector(`[data-track-id="${trackId}"]`)) {
+                        // Если трек в списке результатов поиска, обновляем UI
+                        document.getElementById('search-form').dispatchEvent(new Event('submit'));
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error(`Ошибка при удалении жанра: ${response.status}`, errorText);
+                    alert(`Ошибка при удалении жанра: ${errorText || response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Ошибка при удалении жанра:', error);
+                alert(`Ошибка: ${error.message}`);
+            }
+        }
+
+        // Функция для выбора и добавления жанра к треку
+        async function assignGenreToTrack(trackId) {
+            try {
+                // Загружаем список доступных жанров
+                const response = await fetch(`${API_URL}/genres`);
+                if (!response.ok) {
+                    alert('Ошибка при загрузке жанров');
+                    return;
+                }
+                
+                const genres = await response.json();
+                console.log("Доступные жанры для добавления:", genres); // Добавляем логирование
+                
+                if (!genres || genres.length === 0) {
+                    alert('Нет доступных жанров. Создайте жанр сначала.');
+                    return;
+                }
+                
+                // Создаем выпадающий список жанров
+                let html = '<div class="genre-select-container">';
+                html += '<h4>Выберите жанр для трека:</h4>';
+                html += '<select id="genre-select">';
+                
+                genres.forEach(genre => {
+                    const genreName = genre.name || genre.Name;
+                    const genreId = genre.id || genre.ID;
+                    html += `<option value="${genreId}">${genreName}</option>`;
+                });
+                
+                html += '</select>';
+                html += `<button id="confirm-genre" data-track-id="${trackId}">Добавить</button>`;
+                html += '<button id="cancel-genre" style="background-color:#f44336;margin-left:10px;">Отмена</button>';
+                html += '</div>';
+                
+                // Показываем диалог выбора жанра
+                const genreDialog = document.createElement('div');
+                genreDialog.className = 'genre-dialog';
+                genreDialog.innerHTML = html;
+                
+                document.body.appendChild(genreDialog);
+                
+                // Обработчик кнопки отмены
+                document.getElementById('cancel-genre').addEventListener('click', () => {
+                    document.body.removeChild(genreDialog);
+                });
+                
+                // Обработчик подтверждения выбора жанра
+                document.getElementById('confirm-genre').addEventListener('click', async () => {
+                    const genreId = document.getElementById('genre-select').value;
+                    console.log(`Добавление жанра: trackId=${trackId}, genreId=${genreId}`); // Логирование
+                    
+                    try {
+                        // Используем правильный URL для добавления жанра к треку
+                        const assignResponse = await fetch(`${API_URL}/genres/tracks/${trackId}/genres`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${authToken}`
+                            },
+                            body: JSON.stringify({ genre_id: genreId })
+                        });
+                        
+                        console.log('Ответ сервера при добавлении жанра:', assignResponse.status); // Логирование
+                        
+                        if (assignResponse.ok) {
+                            alert('Жанр успешно добавлен к треку');
+                            document.body.removeChild(genreDialog);
+                            
+                            // Обновляем информацию о треке
+                            if (document.querySelector(`[data-track-id="${trackId}"]`)) {
+                                // Если это в списке треков, перезагружаем соответствующий UI
+                                document.getElementById('search-form').dispatchEvent(new Event('submit'));
+                            }
+                        } else {
+                            const errorText = await assignResponse.text();
+                            console.error('Ошибка при добавлении жанра:', errorText); // Логирование
+                            alert(`Ошибка: ${errorText || assignResponse.statusText}`);
+                        }
+                    } catch (error) {
+                        console.error('Ошибка при добавлении жанра к треку:', error);
+                        alert(`Ошибка: ${error.message}`);
+                    }
+                });
+            } catch (error) {
+                console.error('Ошибка при подготовке диалога выбора жанра:', error);
+                alert(`Ошибка: ${error.message}`);
+            }
+        }
+
+        // Функция для отображения треков
+        async function displayTracks(tracks) {
+            const container = document.getElementById('search-results');
+            if (!tracks || tracks.length === 0) {
+                container.innerHTML = '<p>Треки не найдены.</p>';
+                return;
+            }
+            
+            let html = '<ul class="tracks-list">';
+            for (const track of tracks) {
+                console.log('Отображаем трек:', track); // Логирование трека
+                
+                // Получаем жанры для трека
+                const trackGenresHtml = await showTrackGenres(track.ID || track.id);
+                
+                // Используем правильные имена полей с учетом обоих вариантов (ID/id, Title/title и т.д.)
+                const trackId = track.ID || track.id;
+                const title = track.Title || track.title;
+                const artistName = track.ArtistName || track.artist_name;
+                const duration = track.Duration || track.duration;
+                const albumTitle = track.AlbumTitle || track.album_title;
+                
+                html += `
+                    <li class="track-item" data-track-id="${trackId}">
+                        <div class="track-info">
+                            <h3>${title} - ${artistName}</h3>
+                            <p>Длительность: ${formatDuration(duration)}</p>
+                            ${albumTitle ? `<p>Альбом: ${albumTitle}</p>` : ''}
+                            <div class="track-actions">
+                                <button class="play-btn" data-id="${trackId}">Слушать</button>
+                                ${userPermission === 'admin' ? `<button class="delete-track-btn" data-track-id="${trackId}">Удалить</button>` : ''}
+                            </div>
+                            ${trackGenresHtml}
+                        </div>
+                    </li>
+                `;
+            }
+            html += '</ul>';
+            
+            container.innerHTML = html;
+            
+            // Добавляем обработчики событий кнопок
+            document.querySelectorAll('.play-btn').forEach(btn => {
+                btn.addEventListener('click', playTrack);
+            });
+            
+            // Обработчик для кнопок удаления трека
+            document.querySelectorAll('.delete-track-btn').forEach(btn => {
+                btn.addEventListener('click', deleteTrack);
+            });
+            
+            // Обработчик для кнопок добавления жанра к треку
+            document.querySelectorAll('.assign-genre-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const trackId = e.target.dataset.trackId;
+                    assignGenreToTrack(trackId);
+                });
+            });
+        }
+
+        // Функция форматирования длительности
+        function formatDuration(durationInSeconds) {
+            if (!durationInSeconds) return 'Неизвестно';
+            
+            const minutes = Math.floor(durationInSeconds / 60);
+            const seconds = durationInSeconds % 60;
+            
+            return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        // Функция для отображения сообщений в консоли и интерфейсе
+        function showMessage(containerId, message, isError = false) {
+            const container = document.getElementById(containerId);
+            const className = isError ? 'error' : 'success';
+            container.innerHTML = `<p class="${className}">${message}</p>`;
+            console.log(`${isError ? 'ОШИБКА' : 'СООБЩЕНИЕ'}: ${message}`);
+        }
+
+        // Когда загружается страница, каждые 5 секунд проверяем доступность API
+        document.addEventListener('DOMContentLoaded', function() {
+            checkApiConnection();
+            setInterval(checkApiConnection, 5000);
+        });
+
+        // Проверка доступности API
+        async function checkApiConnection() {
+            try {
+                const response = await fetch(`${API_URL}/genres`, { 
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                const statusBarContainer = document.createElement('div');
+                statusBarContainer.id = 'api-status-bar';
+                statusBarContainer.style.position = 'fixed';
+                statusBarContainer.style.bottom = '10px';
+                statusBarContainer.style.right = '10px';
+                statusBarContainer.style.padding = '5px 10px';
+                statusBarContainer.style.borderRadius = '3px';
+                statusBarContainer.style.fontSize = '12px';
+                
+                if (response.ok) {
+                    statusBarContainer.style.backgroundColor = '#dff0d8';
+                    statusBarContainer.style.color = '#3c763d';
+                    statusBarContainer.innerHTML = 'API доступен';
+                } else {
+                    statusBarContainer.style.backgroundColor = '#f2dede';
+                    statusBarContainer.style.color = '#a94442';
+                    statusBarContainer.innerHTML = `API недоступен: ${response.status}`;
+                }
+                
+                // Добавляем/обновляем индикатор на странице
+                const existingBar = document.getElementById('api-status-bar');
+                if (existingBar) {
+                    existingBar.replaceWith(statusBarContainer);
+                } else {
+                    document.body.appendChild(statusBarContainer);
+                }
+            } catch (error) {
+                console.error('Ошибка при проверке API:', error);
+                
+                const statusBarContainer = document.createElement('div');
+                statusBarContainer.id = 'api-status-bar';
+                statusBarContainer.style.position = 'fixed';
+                statusBarContainer.style.bottom = '10px';
+                statusBarContainer.style.right = '10px';
+                statusBarContainer.style.padding = '5px 10px';
+                statusBarContainer.style.borderRadius = '3px';
+                statusBarContainer.style.backgroundColor = '#f2dede';
+                statusBarContainer.style.color = '#a94442';
+                statusBarContainer.innerHTML = 'API недоступен: ошибка соединения';
+                
+                // Добавляем/обновляем индикатор на странице
+                const existingBar = document.getElementById('api-status-bar');
+                if (existingBar) {
+                    existingBar.replaceWith(statusBarContainer);
+                } else {
+                    document.body.appendChild(statusBarContainer);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -29,13 +29,21 @@ func NewAlbumUseCase(
 	}
 }
 
-func (uc *albumUseCase) CreateAlbum(title string, releaseDate time.Time, coverURL string) (*models.Album, error) {
+func (uc *albumUseCase) CreateAlbum(title string, artist string, releaseDate time.Time, coverURL string) (*models.Album, error) {
 	title = strings.TrimSpace(title)
 	if utf8.RuneCountInString(title) < 2 {
 		return nil, errors.New("album title must be at least 2 characters")
 	}
 	if utf8.RuneCountInString(title) > 100 {
 		return nil, errors.New("album title is too long (max 100 characters)")
+	}
+
+	artist = strings.TrimSpace(artist)
+	if artist == "" {
+		return nil, errors.New("artist name is required")
+	}
+	if utf8.RuneCountInString(artist) > 100 {
+		return nil, errors.New("artist name is too long (max 100 characters)")
 	}
 
 	if releaseDate.After(time.Now().Add(24 * time.Hour)) {
@@ -54,13 +62,15 @@ func (uc *albumUseCase) CreateAlbum(title string, releaseDate time.Time, coverUR
 	}
 
 	for _, a := range existingAlbums {
-		if strings.EqualFold(a.Title, title) {
-			return nil, errors.New("album with this title already exists")
+		if strings.EqualFold(a.Title, title) && strings.EqualFold(a.Artist, artist) {
+			return nil, errors.New("album with this title and artist already exists")
 		}
 	}
 
 	album := &models.Album{
+		ID:          uuid.New(),
 		Title:       title,
+		Artist:      artist,
 		ReleaseDate: releaseDate,
 		CoverURL:    coverURL,
 		CreatedAt:   time.Now(),
@@ -161,7 +171,7 @@ func (uc *albumUseCase) GetAlbumDetails(albumID uuid.UUID) (*models.Album, []*mo
 	return album, tracks, nil
 }
 
-func (uc *albumUseCase) UpdateAlbumInfo(albumID uuid.UUID, title, coverURL string, releaseDate time.Time) error {
+func (uc *albumUseCase) UpdateAlbumInfo(albumID uuid.UUID, title, artist, coverURL string, releaseDate time.Time) error {
 	album, err := uc.albumRepo.FindByID(albumID)
 	if err != nil {
 		return fmt.Errorf("album not found: %w", err)
@@ -176,6 +186,14 @@ func (uc *albumUseCase) UpdateAlbumInfo(albumID uuid.UUID, title, coverURL strin
 			return errors.New("album title is too long (max 100 characters)")
 		}
 		album.Title = title
+	}
+
+	if artist != "" {
+		artist = strings.TrimSpace(artist)
+		if utf8.RuneCountInString(artist) > 100 {
+			return errors.New("artist name is too long (max 100 characters)")
+		}
+		album.Artist = artist
 	}
 
 	if coverURL != "" {
@@ -194,6 +212,42 @@ func (uc *albumUseCase) UpdateAlbumInfo(albumID uuid.UUID, title, coverURL strin
 
 	album.UpdatedAt = time.Now()
 	return uc.albumRepo.Save(album)
+}
+
+func (uc *albumUseCase) ListAll() ([]*models.Album, error) {
+	albums, err := uc.albumRepo.ListAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list albums: %w", err)
+	}
+	return albums, nil
+}
+
+func (uc *albumUseCase) Delete(albumID uuid.UUID) error {
+	// Проверяем, что альбом существует
+	_, err := uc.albumRepo.FindByID(albumID)
+	if err != nil {
+		return fmt.Errorf("album not found: %w", err)
+	}
+
+	// Получаем треки альбома
+	tracks, err := uc.albumRepo.GetTracks(albumID)
+	if err != nil {
+		return fmt.Errorf("failed to get album tracks: %w", err)
+	}
+
+	// Удаляем все треки альбома
+	for _, track := range tracks {
+		if err := uc.trackRepo.Delete(track.ID); err != nil {
+			return fmt.Errorf("failed to delete track %s: %w", track.ID, err)
+		}
+	}
+
+	// Удаляем альбом
+	if err := uc.albumRepo.Delete(albumID); err != nil {
+		return fmt.Errorf("failed to delete album: %w", err)
+	}
+
+	return nil
 }
 
 func sortTracks(tracks []*models.Track) {

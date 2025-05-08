@@ -9,3 +9,10 @@ db:
   password: "1234"
   name: "music_service"
   sslmode: "disable" 
+
+storage:
+  tracks_dir: "./storage/tracks"
+  max_file_size_mb: 20
+  allowed_types:
+    - "audio/mpeg"
+    - "audio/mp3" 

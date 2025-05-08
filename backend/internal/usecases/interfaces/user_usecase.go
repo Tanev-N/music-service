@@ -13,4 +13,5 @@ type UserUseCase interface {
 	UpdatePermissions(userID uuid.UUID, permission models.Permission) error
 	DeleteUser(userID uuid.UUID) error
 	Logout(sessionID uuid.UUID) error
+	ValidateSession(token string) (*models.User, error)
 }

@@ -63,3 +63,19 @@ func (r *HistoryRepository) GetHistory(userID uuid.UUID) ([]*models.ListeningHis
 
 	return history, nil
 }
+
+// GetPlayCount возвращает количество прослушиваний трека
+func (r *HistoryRepository) GetPlayCount(trackID uuid.UUID) (int, error) {
+	var count int
+	query := `
+		SELECT COUNT(*) 
+		FROM listening_history 
+		WHERE track_id = $1
+	`
+	err := r.db.QueryRow(query, trackID).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}

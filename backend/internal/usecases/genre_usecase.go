@@ -45,6 +45,7 @@ func (uc *genreUseCase) CreateGenre(name string) (*models.Genre, error) {
 		}
 	}
 	genre := &models.Genre{
+		ID:   uuid.New(),
 		Name: name,
 	}
 	if err := uc.genreRepo.Save(genre); err != nil {

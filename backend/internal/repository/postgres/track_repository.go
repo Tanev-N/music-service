@@ -2,24 +2,33 @@ package postgres
 
 import (
 	"database/sql"
+	"fmt"
+	"io"
 	"music-service/internal/models"
 	"music-service/internal/repository/interfaces"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgtype"
 )
 
 type TrackRepository struct {
-	db *sql.DB
+	db        *sql.DB
+	tracksDir string
 }
 
-func NewTrackRepository(db *sql.DB) interfaces.TrackRepository {
+func NewTrackRepository(db *sql.DB, tracksDir string) interfaces.TrackRepository {
 	return &TrackRepository{
-		db: db,
+		db:        db,
+		tracksDir: tracksDir,
 	}
 }
 
 func (r *TrackRepository) FindByID(id uuid.UUID) (*models.Track, error) {
 	var track models.Track
+	var albumID pgtype.UUID
 	query := `SELECT id, title, duration, file_path, album_id, artist_name, cover_url, added_date, updated_at, play_count 
 				FROM tracks WHERE id = $1`
 	err := r.db.QueryRow(query, id).Scan(
@@ -27,7 +36,7 @@ func (r *TrackRepository) FindByID(id uuid.UUID) (*models.Track, error) {
 		&track.Title,
 		&track.Duration,
 		&track.FilePath,
-		&track.AlbumID,
+		&albumID,
 		&track.ArtistName,
 		&track.CoverURL,
 		&track.AddedDate,
@@ -37,10 +46,22 @@ func (r *TrackRepository) FindByID(id uuid.UUID) (*models.Track, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if albumID.Status == pgtype.Present {
+		track.AlbumID = albumID.Bytes
+	}
+
 	return &track, nil
 }
 
 func (r *TrackRepository) Save(track *models.Track) error {
+	var albumID interface{}
+	if track.AlbumID == uuid.Nil {
+		albumID = nil
+	} else {
+		albumID = track.AlbumID
+	}
+
 	query := `
 		INSERT INTO tracks (id, title, duration, file_path, album_id, artist_name, cover_url, added_date, updated_at, play_count) 
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -49,7 +70,7 @@ func (r *TrackRepository) Save(track *models.Track) error {
 			cover_url = $7, updated_at = $9, play_count = $10
 	`
 	_, err := r.db.Exec(query, track.ID, track.Title, track.Duration, track.FilePath,
-		track.AlbumID, track.ArtistName, track.CoverURL, track.AddedDate, track.UpdatedAt, track.PlayCount)
+		albumID, track.ArtistName, track.CoverURL, track.AddedDate, track.UpdatedAt, track.PlayCount)
 	return err
 }
 
@@ -99,4 +120,69 @@ func (r *TrackRepository) IncrementPlayCount(trackID uuid.UUID) error {
 	query := `UPDATE tracks SET play_count = play_count + 1 WHERE id = $1`
 	_, err := r.db.Exec(query, trackID)
 	return err
+}
+
+func (r *TrackRepository) SaveTrackFile(trackID uuid.UUID, fileReader io.Reader, fileSize int64) (string, error) {
+	if err := os.MkdirAll(r.tracksDir, 0755); err != nil {
+		return "", fmt.Errorf("не удалось создать директорию для треков: %w", err)
+	}
+
+	trackIDStr := trackID.String()
+	subDir := filepath.Join(r.tracksDir, trackIDStr[:2], trackIDStr[2:4])
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		return "", fmt.Errorf("не удалось создать поддиректорию: %w", err)
+	}
+
+	filePath := filepath.Join(subDir, fmt.Sprintf("%s.mp3", trackIDStr))
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return "", fmt.Errorf("не удалось создать файл: %w", err)
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, fileReader)
+	if err != nil {
+		os.Remove(filePath)
+		return "", fmt.Errorf("не удалось сохранить файл: %w", err)
+	}
+
+	relativePath := strings.TrimPrefix(filePath, r.tracksDir)
+	relativePath = strings.TrimPrefix(relativePath, "/")
+	return relativePath, nil
+}
+
+func (r *TrackRepository) GetStorageDir() string {
+	return r.tracksDir
+}
+
+// GetGenresForTrack возвращает список жанров для трека
+func (r *TrackRepository) GetGenresForTrack(trackID uuid.UUID) ([]*models.Genre, error) {
+	var genres []*models.Genre
+	query := `
+		SELECT g.id, g.name
+		FROM genres g
+		JOIN track_genres tg ON g.id = tg.genre_id
+		WHERE tg.track_id = $1
+	`
+	rows, err := r.db.Query(query, trackID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var genre models.Genre
+		err := rows.Scan(&genre.ID, &genre.Name)
+		if err != nil {
+			return nil, err
+		}
+		genres = append(genres, &genre)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return genres, nil
 }

@@ -22,7 +22,10 @@ CREATE TABLE IF NOT EXISTS albums (
     id UUID PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     artist VARCHAR(255) NOT NULL,
-    cover_url VARCHAR(255)
+    cover_url VARCHAR(255),
+    release_date TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- Таблица треков
@@ -31,7 +34,7 @@ CREATE TABLE IF NOT EXISTS tracks (
     title VARCHAR(255) NOT NULL,
     duration INTEGER NOT NULL,
     file_path VARCHAR(255) NOT NULL,
-    album_id UUID REFERENCES albums(id) ON DELETE SET NULL,
+    album_id UUID REFERENCES albums(id) ON DELETE CASCADE,
     artist_name VARCHAR(255) NOT NULL,
     cover_url VARCHAR(255),
     added_date TIMESTAMP NOT NULL DEFAULT NOW(),

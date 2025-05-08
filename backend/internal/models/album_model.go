@@ -9,6 +9,7 @@ import (
 type Album struct {
 	ID          uuid.UUID
 	Title       string
+	Artist      string
 	ReleaseDate time.Time
 	CoverURL    string
 	CreatedAt   time.Time

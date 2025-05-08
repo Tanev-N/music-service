@@ -202,6 +202,71 @@ paths:
         '500':
           description: Ошибка сервера
 
+    post:
+      summary: Загрузить новый трек (только для администраторов)
+      operationId: uploadTrack
+      security:
+        - BearerAuth: []
+      tags:
+        - tracks
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: MP3 файл трека
+                title:
+                  type: string
+                  example: "Название трека"
+                artist_name:
+                  type: string
+                  example: "Имя исполнителя"
+                duration:
+                  type: integer
+                  description: Длительность трека в секундах
+                  example: 180
+                album_id:
+                  type: string
+                  format: uuid
+                  description: ID альбома (обязательно)
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                cover_url:
+                  type: string
+                  format: uri
+                  description: URL обложки трека (необязательно)
+                genre_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: |
+                    Массив ID жанров для трека (опционально). Если не передан, трек создаётся без жанров.
+              required:
+                - file
+                - title
+                - artist_name
+                - album_id
+      responses:
+        '201':
+          description: Трек успешно загружен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Track'
+        '400':
+          description: Некорректные данные запроса
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав (требуются права администратора)
+        '500':
+          description: Ошибка сервера
+
   /tracks/{id}:
     get:
       summary: Получить детали трека
@@ -221,42 +286,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Track'
-        '404':
-          description: Трек не найден
-        '500':
-          description: Ошибка сервера
-    
-    put:
-      summary: Обновить метаданные трека
-      operationId: updateTrackMetadata
-      tags:
-        - tracks
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-      responses:
-        '200':
-          description: Метаданные обновлены
+                $ref: '#/components/schemas/TrackDetails'
         '404':
           description: Трек не найден
         '500':
           description: Ошибка сервера
     
     delete:
-      summary: Удалить трек
+      summary: Удалить трек (только для администраторов)
       operationId: deleteTrack
+      security:
+        - BearerAuth: []
       tags:
         - tracks
       parameters:
@@ -269,6 +309,36 @@ paths:
       responses:
         '204':
           description: Трек успешно удален
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав (требуются права администратора)
+        '404':
+          description: Трек не найден
+        '500':
+          description: Ошибка сервера
+    
+  /tracks/{id}/stream:
+    get:
+      summary: Прослушать трек (потоковая передача MP3 файла)
+      operationId: streamTrack
+      tags:
+        - tracks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Аудиофайл MP3
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
         '404':
           description: Трек не найден
         '500':
@@ -296,9 +366,28 @@ paths:
           description: Ошибка сервера
 
   /albums:
+    get:
+      summary: Получить список всех альбомов
+      operationId: listAllAlbums
+      tags:
+        - albums
+      responses:
+        '200':
+          description: Список всех альбомов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Album'
+        '500':
+          description: Ошибка сервера
+    
     post:
       summary: Создать новый альбом
       operationId: createAlbum
+      security:
+        - BearerAuth: []
       tags:
         - albums
       requestBody:
@@ -311,6 +400,9 @@ paths:
                 title:
                   type: string
                   example: "My New Album"
+                artist:
+                  type: string
+                  example: "Artist Name"
                 release_date:
                   type: string
                   format: date-time
@@ -319,7 +411,7 @@ paths:
                   example: "https://example.com/album-cover.jpg"
               required:
                 - title
-                - release_date
+                - artist
       responses:
         '201':
           description: Альбом успешно создан
@@ -329,6 +421,8 @@ paths:
                 $ref: '#/components/schemas/Album'
         '400':
           description: Некорректные данные запроса
+        '403':
+          description: Недостаточно прав (требуются права администратора)
         '500':
           description: Ошибка сервера
 
@@ -351,14 +445,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  album:
-                    $ref: '#/components/schemas/Album'
-                  tracks:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Track'
+                $ref: '#/components/schemas/AlbumWithTracks'
         '404':
           description: Альбом не найден
         '500':
@@ -367,6 +454,8 @@ paths:
     put:
       summary: Обновить информацию об альбоме
       operationId: updateAlbumInfo
+      security:
+        - BearerAuth: []
       tags:
         - albums
       parameters:
@@ -386,6 +475,9 @@ paths:
                 title:
                   type: string
                   example: "Updated Album Title"
+                artist:
+                  type: string
+                  example: "Updated Artist Name"
                 release_date:
                   type: string
                   format: date-time
@@ -394,10 +486,38 @@ paths:
                   example: "https://example.com/new-cover.jpg"
               required:
                 - title
-                - release_date
+                - artist
       responses:
         '200':
           description: Информация об альбоме обновлена
+        '400':
+          description: Некорректные данные запроса
+        '403':
+          description: Недостаточно прав (требуются права администратора)
+        '404':
+          description: Альбом не найден
+        '500':
+          description: Ошибка сервера
+    
+    delete:
+      summary: Удалить альбом (вместе со всеми треками)
+      operationId: deleteAlbum
+      security:
+        - BearerAuth: []
+      tags:
+        - albums
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Альбом и все его треки успешно удалены
+        '403':
+          description: Недостаточно прав (требуются права администратора)
         '404':
           description: Альбом не найден
         '500':
@@ -407,6 +527,8 @@ paths:
     post:
       summary: Добавить трек в альбом
       operationId: addTrackToAlbum
+      security:
+        - BearerAuth: []
       tags:
         - albums
       parameters:
@@ -431,25 +553,31 @@ paths:
       responses:
         '200':
           description: Трек добавлен в альбом
+        '400':
+          description: Некорректные данные запроса
+        '403':
+          description: Недостаточно прав (требуются права администратора)
         '404':
           description: Альбом или трек не найден
         '500':
           description: Ошибка сервера
 
-  /albums/{albumId}/tracks/{trackId}:
+  /albums/{id}/tracks/{track_id}:
     delete:
       summary: Удалить трек из альбома
       operationId: removeTrackFromAlbum
+      security:
+        - BearerAuth: []
       tags:
         - albums
       parameters:
-        - name: albumId
+        - name: id
           in: path
           required: true
           schema:
             type: string
             format: uuid
-        - name: trackId
+        - name: track_id
           in: path
           required: true
           schema:
@@ -458,6 +586,8 @@ paths:
       responses:
         '200':
           description: Трек удален из альбома
+        '403':
+          description: Недостаточно прав (требуются права администратора)
         '404':
           description: Альбом или трек не найден
         '500':
@@ -663,6 +793,8 @@ paths:
     post:
       summary: Создать новый жанр
       operationId: createGenre
+      security:
+        - BearerAuth: []
       tags:
         - genres
       requestBody:
@@ -686,6 +818,8 @@ paths:
                 $ref: '#/components/schemas/Genre'
         '400':
           description: Некорректные данные запроса
+        '403':
+          description: Недостаточно прав (требуются права администратора)
         '500':
           description: Ошибка сервера
 
@@ -716,14 +850,16 @@ paths:
         '500':
           description: Ошибка сервера
 
-  /genres/tracks/{trackId}/genres:
+  /genres/tracks/{id}/genres:
     post:
       summary: Назначить жанр треку
       operationId: assignGenreToTrack
+      security:
+        - BearerAuth: []
       tags:
         - genres
       parameters:
-        - name: trackId
+        - name: id
           in: path
           required: true
           schema:
@@ -744,6 +880,10 @@ paths:
       responses:
         '200':
           description: Жанр назначен треку
+        '400':
+          description: Некорректные данные запроса
+        '403':
+          description: Недостаточно прав (требуются права администратора)
         '404':
           description: Трек или жанр не найден
         '500':
@@ -753,6 +893,8 @@ paths:
     delete:
       summary: Удалить жанр у трека
       operationId: removeGenreFromTrack
+      security:
+        - BearerAuth: []
       tags:
         - genres
       parameters:
@@ -771,6 +913,8 @@ paths:
       responses:
         '200':
           description: Жанр удален у трека
+        '403':
+          description: Недостаточно прав (требуются права администратора)
         '404':
           description: Трек или жанр не найден
         '500':
@@ -896,20 +1040,93 @@ components:
           format: uuid
         title:
           type: string
-        artist:
-          type: string
         duration:
           type: integer
           description: Продолжительность трека в секундах
         file_path:
           type: string
-        created_at:
+          description: Относительный путь к MP3 файлу
+        album_id:
+          type: string
+          format: uuid
+          description: ID альбома, к которому принадлежит трек (обязательно)
+        artist_name:
+          type: string
+        cover_url:
+          type: string
+          description: URL обложки трека
+        added_date:
           type: string
           format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        play_count:
+          type: integer
+          description: Количество прослушиваний
+        genres:
+          type: array
+          items:
+            $ref: '#/components/schemas/Genre'
+          description: Список жанров трека
       required:
         - id
         - title
         - duration
+        - file_path
+        - artist_name
+        - added_date
+        - updated_at
+    
+    TrackDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        duration:
+          type: integer
+          description: Продолжительность трека в секундах
+        artist_name:
+          type: string
+        cover_url:
+          type: string
+          description: URL обложки трека
+        added_date:
+          type: string
+          format: date-time
+        play_count:
+          type: integer
+          description: Количество прослушиваний
+        album_id:
+          type: string
+          format: uuid
+          description: ID альбома, к которому принадлежит трек
+        album_title:
+          type: string
+          description: Название альбома, если трек принадлежит альбому
+        album_artist:
+          type: string
+          description: Исполнитель альбома, если трек принадлежит альбому
+        genres:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+      required:
+        - id
+        - title
+        - duration
+        - artist_name
+        - added_date
+        - play_count
     
     Album:
       type: object
@@ -919,15 +1136,56 @@ components:
           format: uuid
         title:
           type: string
+        artist:
+          type: string
         release_date:
           type: string
           format: date-time
         cover_url:
           type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
       required:
         - id
         - title
+        - artist
         - release_date
+    
+    AlbumWithTracks:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        artist:
+          type: string
+        release_date:
+          type: string
+          format: date-time
+        cover_url:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        tracks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'
+      required:
+        - id
+        - title
+        - artist
+        - release_date
+        - tracks
     
     Playlist:
       type: object
@@ -995,3 +1253,9 @@ components:
         - user_id
         - track_id
         - listened_at 
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT 

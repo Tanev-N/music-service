@@ -8,6 +8,7 @@ import (
 
 type UserRepository interface {
 	FindByID(id uuid.UUID) (*models.User, error)
+	FindByLogin(login string) (*models.User, error)
 	Save(user *models.User) error
 	Delete(id uuid.UUID) error
 	Search(query string) ([]*models.User, error)

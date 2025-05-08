@@ -7,12 +7,19 @@ import (
 )
 
 type Config struct {
-	App AppConfig `yaml:"app"`
+	App     AppConfig     `yaml:"app"`
+	Storage StorageConfig `yaml:"storage"`
 }
 
 type AppConfig struct {
 	Name string `yaml:"name"`
 	Port string `yaml:"port"`
+}
+
+type StorageConfig struct {
+	TracksDir     string   `yaml:"tracks_dir"`
+	MaxFileSizeMB int      `yaml:"max_file_size_mb"`
+	AllowedTypes  []string `yaml:"allowed_types"`
 }
 
 func NewConfig(path string) (*Config, error) {
