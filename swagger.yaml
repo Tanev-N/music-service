@@ -386,27 +386,6 @@ paths:
         '500':
           description: Ошибка сервера
 
-  /tracks/{id}/play:
-    post:
-      summary: Воспроизвести трек
-      operationId: playTrack
-      tags:
-        - tracks
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Трек воспроизводится
-        '404':
-          description: Трек не найден
-        '500':
-          description: Ошибка сервера
-
   /albums:
     get:
       summary: Получить список всех альбомов
@@ -1093,14 +1072,57 @@ paths:
       responses:
         '200':
           description: Прослушивание записано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Прослушивание успешно записано"
         '400':
           description: Некорректный ID трека
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid track ID"
         '401':
           description: Не авторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized"
         '404':
           description: Трек не найден
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Track not found"
         '500':
           description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal server error"
 
 components:
   schemas:
