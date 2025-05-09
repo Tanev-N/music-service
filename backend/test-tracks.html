@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Тестирование трекового API</title>
+    <!-- Используем jQuery из CDN с локальным fallback -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" 
+            integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" 
+            crossorigin="anonymous"></script>
+    <script>
+        // Fallback на локальную версию, если CDN недоступен
+        if (typeof jQuery === 'undefined') {
+            document.write('<script src="jquery-3.6.0.min.js"><\/script>');
+        }
+    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -304,6 +314,92 @@
             font-size: 14px;
             color: #555;
         }
+        .playlist-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+        
+        .playlist-card h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        
+        .playlist-description {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .playlist-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .playlist-actions button {
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .view-playlist-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        
+        .delete-playlist-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+        }
+        
+        .add-to-playlist-btn {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            margin-left: 5px;
+        }
+        
+        .playlist-details {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .playlist-header {
+            margin-bottom: 20px;
+        }
+        
+        #playlist-tracks {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .playlist-track-item {
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .playlist-select-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
@@ -431,10 +527,48 @@
         <div id="search-results"></div>
     </div>
 
+    <div class="container">
+        <h2>Управление плейлистами</h2>
+        <div id="playlist-management">
+            <div class="playlist-creation">
+                <h3>Создание нового плейлиста</h3>
+                <form id="playlist-form">
+                    <div>
+                        <label for="playlist-name">Название плейлиста:</label>
+                        <input type="text" id="playlist-name" name="name" required>
+                    </div>
+                    <div>
+                        <label for="playlist-description">Описание:</label>
+                        <textarea id="playlist-description" name="description" rows="3"></textarea>
+                    </div>
+                    <button type="submit">Создать плейлист</button>
+                </form>
+                <div id="playlist-result"></div>
+            </div>
+            
+            <div class="playlist-list">
+                <h3>Мои плейлисты</h3>
+                <button id="refresh-playlists">Обновить список плейлистов</button>
+                <div id="playlists-container"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="container hidden" id="player-container">
         <h2>Проигрыватель</h2>
         <div id="track-info"></div>
         <audio id="audio-player" controls></audio>
+    </div>
+
+    <div class="container">
+        <h2>История прослушиваний</h2>
+        <div id="history-management">
+            <div class="history-controls">
+                <button id="refresh-history">Обновить историю</button>
+                <button id="show-recent-history">Показать недавние прослушивания</button>
+            </div>
+            <div id="history-container"></div>
+        </div>
     </div>
 
     <script>
@@ -691,14 +825,16 @@
         // Воспроизведение трека
         async function playTrack(e) {
             const trackId = e.target.dataset.id;
+            console.log('Попытка воспроизвести трек с ID:', trackId); // Отладочный вывод
             
             try {
                 // Получаем информацию о треке
                 const response = await fetch(`${API_URL}/tracks/${trackId}`);
+                console.log('Ответ сервера:', response.status); // Отладочный вывод
                 
                 if (response.ok) {
                     const track = await response.json();
-                    console.log('Информация о треке:', track); // Добавляем логирование
+                    console.log('Информация о треке:', track); // Отладочный вывод
                     
                     const playerContainer = document.getElementById('player-container');
                     playerContainer.classList.remove('hidden');
@@ -712,21 +848,30 @@
                     
                     const audioPlayer = document.getElementById('audio-player');
                     audioPlayer.src = `${API_URL}/tracks/${trackId}/stream`;
-                    audioPlayer.play();
-                    
-                    // Запись прослушивания, если авторизован
+                    audioPlayer.play().catch(error => {
+                        console.error('Ошибка воспроизведения:', error);
+                        alert('Ошибка при воспроизведении трека');
+                    });
+
+                    // Запись прослушивания
                     if (authToken) {
-                        fetch(`${API_URL}/tracks/${trackId}/play`, {
+                        fetch(`${API_URL}/history/tracks/${trackId}`, {
                             method: 'POST',
                             headers: {
-                                'Authorization': `Bearer ${authToken}`
+                                'Authorization': `Bearer ${authToken}`,
+                                'Content-Type': 'application/json'
                             }
+                        }).catch(error => {
+                            console.error('Ошибка при записи прослушивания:', error);
                         });
                     }
                 } else {
+                    const errorText = await response.text();
+                    console.error('Ошибка при получении информации о треке:', errorText); // Отладочный вывод
                     alert('Ошибка при получении информации о треке');
                 }
             } catch (error) {
+                console.error('Ошибка:', error); // Отладочный вывод
                 alert(`Ошибка: ${error.message}`);
             }
         }
@@ -965,6 +1110,7 @@
                                     </div>
                                     <div>
                                         <button class="play-button" data-id="${track.ID}">Слушать</button>
+                                        ${authToken ? `<button class="add-to-playlist-btn" data-track-id="${track.ID}">В плейлист</button>` : ''}
                                     </div>
                                 </li>
                             `;
@@ -978,6 +1124,14 @@
                     // Добавляем обработчики
                     document.querySelectorAll('.play-button').forEach(button => {
                         button.addEventListener('click', playTrack);
+                    });
+                    
+                    // Новый обработчик для кнопки 'В плейлист'
+                    document.querySelectorAll('.add-to-playlist-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            const trackId = e.target.dataset.trackId;
+                            addTrackToPlaylist(trackId);
+                        });
                     });
                     
                     document.getElementById('back-to-albums').addEventListener('click', () => {
@@ -1332,6 +1486,7 @@
                             ${albumTitle ? `<p>Альбом: ${albumTitle}</p>` : ''}
                             <div class="track-actions">
                                 <button class="play-btn" data-id="${trackId}">Слушать</button>
+                                ${authToken ? `<button class="add-to-playlist-btn" data-track-id="${trackId}">В плейлист</button>` : ''}
                                 ${userPermission === 'admin' ? `<button class="delete-track-btn" data-track-id="${trackId}">Удалить</button>` : ''}
                             </div>
                             ${trackGenresHtml}
@@ -1353,11 +1508,17 @@
                 btn.addEventListener('click', deleteTrack);
             });
             
-            // Обработчик для кнопок добавления жанра к треку
             document.querySelectorAll('.assign-genre-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const trackId = e.target.dataset.trackId;
                     assignGenreToTrack(trackId);
+                });
+            });
+            
+            document.querySelectorAll('.add-to-playlist-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const trackId = e.target.dataset.trackId;
+                    addTrackToPlaylist(trackId);
                 });
             });
         }
@@ -1443,6 +1604,639 @@
                 }
             }
         }
+
+        // Функции для работы с плейлистами
+        
+        // Создание нового плейлиста
+        document.getElementById('playlist-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!authToken) {
+                document.getElementById('playlist-result').innerHTML = 
+                    `<p class="error">Необходимо авторизоваться</p>`;
+                return;
+            }
+            
+            const name = document.getElementById('playlist-name').value;
+            const description = document.getElementById('playlist-description').value;
+            
+            if (!name.trim()) {
+                document.getElementById('playlist-result').innerHTML = 
+                    `<p class="error">Название плейлиста не может быть пустым</p>`;
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/playlists`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ name, description })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('playlist-result').innerHTML = 
+                        `<p class="success">Плейлист успешно создан! ID: ${data.ID}</p>`;
+                    
+                    // Очищаем поля формы
+                    document.getElementById('playlist-name').value = '';
+                    document.getElementById('playlist-description').value = '';
+                    
+                    // Обновляем список плейлистов
+                    loadPlaylists();
+                } else {
+                    const text = await response.text();
+                    document.getElementById('playlist-result').innerHTML = 
+                        `<p class="error">Ошибка ${response.status}: ${text || response.statusText}</p>`;
+                }
+            } catch (error) {
+                console.error('Ошибка при создании плейлиста:', error);
+                document.getElementById('playlist-result').innerHTML = 
+                    `<p class="error">Ошибка: ${error.message}</p>`;
+            }
+        });
+        
+        // Загрузка списка плейлистов пользователя
+        async function loadPlaylists() {
+            if (!authToken) {
+                document.getElementById('playlists-container').innerHTML = 
+                    `<p class="error">Необходимо авторизоваться для просмотра плейлистов</p>`;
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/playlists`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const playlists = await response.json();
+                    displayPlaylists(playlists);
+                } else {
+                    const text = await response.text();
+                    document.getElementById('playlists-container').innerHTML = 
+                        `<p class="error">Ошибка ${response.status}: ${text || response.statusText}</p>`;
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке плейлистов:', error);
+                document.getElementById('playlists-container').innerHTML = 
+                    `<p class="error">Ошибка: ${error.message}</p>`;
+            }
+        }
+        
+        // Отображение списка плейлистов
+        function displayPlaylists(playlists) {
+            const container = document.getElementById('playlists-container');
+            
+            if (!playlists || playlists.length === 0) {
+                container.innerHTML = '<p>У вас пока нет плейлистов</p>';
+                return;
+            }
+            
+            let html = '';
+            playlists.forEach(playlist => {
+                html += `
+                    <div class="playlist-card" data-id="${playlist.ID}">
+                        <h3>${playlist.Name}</h3>
+                        <div class="playlist-description">${playlist.Description || 'Без описания'}</div>
+                        <div class="playlist-actions">
+                            <button class="view-playlist-btn" data-id="${playlist.ID}">Просмотреть</button>
+                            <button class="delete-playlist-btn" data-id="${playlist.ID}">Удалить</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Добавляем обработчики событий
+            document.querySelectorAll('.view-playlist-btn').forEach(btn => {
+                btn.addEventListener('click', viewPlaylistDetails);
+            });
+            
+            document.querySelectorAll('.delete-playlist-btn').forEach(btn => {
+                btn.addEventListener('click', deletePlaylist);
+            });
+        }
+        
+        // Просмотр деталей плейлиста
+        async function viewPlaylistDetails(e) {
+            const playlistId = e.target.dataset.id;
+            
+            try {
+                const response = await fetch(`${API_URL}/playlists/${playlistId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Данные плейлиста:', data);
+                    
+                    const container = document.getElementById('playlists-container');
+                    const playlist = data.Playlist;
+                    const tracks = data.Tracks || [];
+                    
+                    let html = `
+                        <div class="playlist-details">
+                            <button id="back-to-playlists">« Назад к списку плейлистов</button>
+                            <div class="playlist-header">
+                                <h2>${playlist.Name}</h2>
+                                <p>${playlist.Description || 'Без описания'}</p>
+                                <p>Создан: ${new Date(playlist.CreatedDate).toLocaleString()}</p>
+                            </div>
+                            <h3>Треки в плейлисте:</h3>
+                    `;
+                    
+                    if (!tracks || tracks.length === 0) {
+                        html += '<p>В этом плейлисте пока нет треков</p>';
+                    } else {
+                        html += '<ul id="playlist-tracks">';
+                        tracks.forEach(track => {
+                            // Форматируем длительность
+                            const minutes = Math.floor(track.Duration / 60);
+                            const seconds = track.Duration % 60;
+                            const duration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                            
+                            html += `
+                                <li class="playlist-track-item">
+                                    <div>
+                                        <strong>${track.Title}</strong> - ${track.ArtistName} (${duration})
+                                    </div>
+                                    <div>
+                                        <button class="play-button" data-id="${track.ID}">Слушать</button>
+                                        <button class="remove-from-playlist-btn" data-track-id="${track.ID}" data-playlist-id="${playlist.ID}">Удалить из плейлиста</button>
+                                    </div>
+                                </li>
+                            `;
+                        });
+                        html += '</ul>';
+                    }
+                    
+                    html += '</div>';
+                    container.innerHTML = html;
+                    
+                    // Добавляем обработчики
+                    document.querySelectorAll('.play-button').forEach(button => {
+                        button.addEventListener('click', playTrack);
+                    });
+                    
+                    document.querySelectorAll('.remove-from-playlist-btn').forEach(button => {
+                        button.addEventListener('click', removeTrackFromPlaylist);
+                    });
+                    
+                    document.getElementById('back-to-playlists').addEventListener('click', () => {
+                        loadPlaylists();
+                    });
+                } else {
+                    const text = await response.text();
+                    alert(`Ошибка: ${text || response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке плейлиста:', error);
+                alert(`Ошибка: ${error.message}`);
+            }
+        }
+        
+        // Удаление плейлиста
+        async function deletePlaylist(e) {
+            if (!confirm('Вы уверены, что хотите удалить этот плейлист?')) {
+                return;
+            }
+            
+            const playlistId = e.target.dataset.id;
+            
+            try {
+                const response = await fetch(`${API_URL}/playlists/${playlistId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    alert('Плейлист успешно удален');
+                    loadPlaylists();
+                } else {
+                    const text = await response.text();
+                    alert(`Ошибка при удалении плейлиста: ${text || response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Ошибка при удалении плейлиста:', error);
+                alert(`Ошибка: ${error.message}`);
+            }
+        }
+        
+        // Удаление трека из плейлиста
+        async function removeTrackFromPlaylist(e) {
+            if (!confirm('Вы уверены, что хотите удалить этот трек из плейлиста?')) {
+                return;
+            }
+            
+            const trackId = e.target.dataset.trackId;
+            const playlistId = e.target.dataset.playlistId;
+            
+            try {
+                const response = await fetch(`${API_URL}/playlists/${playlistId}/tracks/${trackId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    alert('Трек успешно удален из плейлиста');
+                    // Обновляем отображение плейлиста
+                    const viewButton = document.querySelector(`.view-playlist-btn[data-id="${playlistId}"]`);
+                    if (viewButton) {
+                        viewButton.click();
+                    } else {
+                        loadPlaylists();
+                    }
+                } else {
+                    const text = await response.text();
+                    alert(`Ошибка при удалении трека из плейлиста: ${text || response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Ошибка при удалении трека из плейлиста:', error);
+                alert(`Ошибка: ${error.message}`);
+            }
+        }
+        
+        // Добавление трека в плейлист
+        async function addTrackToPlaylist(trackId) {
+            if (!authToken) {
+                alert('Необходимо авторизоваться для добавления треков в плейлист');
+                return;
+            }
+            
+            try {
+                // Получаем список плейлистов пользователя
+                const response = await fetch(`${API_URL}/playlists`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    alert('Ошибка при загрузке плейлистов');
+                    return;
+                }
+                
+                const playlists = await response.json();
+                
+                if (!playlists || playlists.length === 0) {
+                    alert('У вас нет плейлистов. Создайте плейлист сначала.');
+                    return;
+                }
+                
+                // Создаем диалог выбора плейлиста
+                let html = '<div class="playlist-select-container">';
+                html += '<h4>Выберите плейлист:</h4>';
+                html += '<select id="playlist-select">';
+                
+                playlists.forEach(playlist => {
+                    html += `<option value="${playlist.ID}">${playlist.Name}</option>`;
+                });
+                
+                html += '</select>';
+                html += `<button id="confirm-playlist" data-track-id="${trackId}">Добавить</button>`;
+                html += '<button id="cancel-playlist" style="background-color:#f44336;margin-left:10px;">Отмена</button>';
+                html += '</div>';
+                
+                // Показываем диалог выбора плейлиста
+                const dialog = document.createElement('div');
+                dialog.className = 'playlist-select-dialog';
+                dialog.innerHTML = html;
+                
+                document.body.appendChild(dialog);
+                
+                // Обработчик кнопки отмены
+                document.getElementById('cancel-playlist').addEventListener('click', () => {
+                    document.body.removeChild(dialog);
+                });
+                
+                // Обработчик подтверждения выбора плейлиста
+                document.getElementById('confirm-playlist').addEventListener('click', async () => {
+                    const playlistId = document.getElementById('playlist-select').value;
+                    
+                    try {
+                        const addResponse = await fetch(`${API_URL}/playlists/${playlistId}/tracks`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${authToken}`
+                            },
+                            body: JSON.stringify({ track_id: trackId })
+                        });
+                        
+                        if (addResponse.ok) {
+                            alert('Трек успешно добавлен в плейлист');
+                            document.body.removeChild(dialog);
+                        } else {
+                            const errorText = await addResponse.text();
+                            alert(`Ошибка: ${errorText || addResponse.statusText}`);
+                        }
+                    } catch (error) {
+                        console.error('Ошибка при добавлении трека в плейлист:', error);
+                        alert(`Ошибка: ${error.message}`);
+                    }
+                });
+            } catch (error) {
+                console.error('Ошибка при подготовке диалога выбора плейлиста:', error);
+                alert(`Ошибка: ${error.message}`);
+            }
+        }
+        
+        // Обработчик кнопки обновления списка плейлистов
+        document.getElementById('refresh-playlists').addEventListener('click', loadPlaylists);
+        
+        // Модифицируем функцию отображения треков, чтобы добавить кнопку добавления в плейлист
+        async function displayTracks(tracks) {
+            const container = document.getElementById('search-results');
+            if (!tracks || tracks.length === 0) {
+                container.innerHTML = '<p>Треки не найдены.</p>';
+                return;
+            }
+            
+            let html = '<ul class="tracks-list">';
+            for (const track of tracks) {
+                console.log('Отображаем трек:', track); // Логирование трека
+                
+                // Получаем жанры для трека
+                const trackGenresHtml = await showTrackGenres(track.ID || track.id);
+                
+                // Используем правильные имена полей с учетом обоих вариантов (ID/id, Title/title и т.д.)
+                const trackId = track.ID || track.id;
+                const title = track.Title || track.title;
+                const artistName = track.ArtistName || track.artist_name;
+                const duration = track.Duration || track.duration;
+                const albumTitle = track.AlbumTitle || track.album_title;
+                
+                html += `
+                    <li class="track-item" data-track-id="${trackId}">
+                        <div class="track-info">
+                            <h3>${title} - ${artistName}</h3>
+                            <p>Длительность: ${formatDuration(duration)}</p>
+                            ${albumTitle ? `<p>Альбом: ${albumTitle}</p>` : ''}
+                            <div class="track-actions">
+                                <button class="play-btn" data-id="${trackId}">Слушать</button>
+                                ${authToken ? `<button class="add-to-playlist-btn" data-track-id="${trackId}">В плейлист</button>` : ''}
+                                ${userPermission === 'admin' ? `<button class="delete-track-btn" data-track-id="${trackId}">Удалить</button>` : ''}
+                            </div>
+                            ${trackGenresHtml}
+                        </div>
+                    </li>
+                `;
+            }
+            html += '</ul>';
+            
+            container.innerHTML = html;
+            
+            // Добавляем обработчики событий кнопок
+            document.querySelectorAll('.play-btn').forEach(btn => {
+                btn.addEventListener('click', playTrack);
+            });
+            
+            // Обработчик для кнопок удаления трека
+            document.querySelectorAll('.delete-track-btn').forEach(btn => {
+                btn.addEventListener('click', deleteTrack);
+            });
+            
+            // Обработчик для кнопок добавления жанра к треку
+            document.querySelectorAll('.assign-genre-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const trackId = e.target.dataset.trackId;
+                    assignGenreToTrack(trackId);
+                });
+            });
+            
+            // Обработчик для кнопок добавления трека в плейлист
+            document.querySelectorAll('.add-to-playlist-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const trackId = e.target.dataset.trackId;
+                    addTrackToPlaylist(trackId);
+                });
+            });
+        }
+        
+        // Загружаем плейлисты при загрузке страницы, если пользователь авторизован
+        document.addEventListener('DOMContentLoaded', function() {
+            if (authToken) {
+                loadAlbums();
+                loadGenres();
+                loadPlaylists(); // Добавляем загрузку плейлистов
+            }
+            
+            // Устанавливаем текущую дату в поле даты релиза альбома
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            document.getElementById('album-release-date').value = formattedDate;
+        });
+
+        // Функции для работы с историей прослушиваний
+        
+        // Загрузка полной истории прослушиваний
+        async function loadHistory() {
+            if (!authToken) {
+                document.getElementById('history-container').innerHTML = 
+                    `<p class="error">Необходимо авторизоваться для просмотра истории</p>`;
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/history`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const history = await response.json();
+                    console.log('Полученные данные истории (детально):', JSON.stringify(history, null, 2));
+                    displayHistory(history, 'Полная история прослушиваний');
+                } else {
+                    const text = await response.text();
+                    console.error('Ошибка при загрузке истории:', response.status, text);
+                    document.getElementById('history-container').innerHTML = 
+                        `<p class="error">Ошибка ${response.status}: ${text || response.statusText}</p>`;
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке истории:', error);
+                document.getElementById('history-container').innerHTML = 
+                    `<p class="error">Ошибка: ${error.message}</p>`;
+            }
+        }
+        
+        // Загрузка недавних прослушиваний
+        async function loadRecentHistory() {
+            if (!authToken) {
+                document.getElementById('history-container').innerHTML = 
+                    `<p class="error">Необходимо авторизоваться для просмотра истории</p>`;
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/history/recent`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const history = await response.json();
+                    displayHistory(history, 'Недавние прослушивания (за последние 24 часа)');
+                } else {
+                    const text = await response.text();
+                    document.getElementById('history-container').innerHTML = 
+                        `<p class="error">Ошибка ${response.status}: ${text || response.statusText}</p>`;
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке недавних прослушиваний:', error);
+                document.getElementById('history-container').innerHTML = 
+                    `<p class="error">Ошибка: ${error.message}</p>`;
+            }
+        }
+        
+        // Отображение истории прослушиваний
+        function displayHistory(history, title) {
+            const container = document.getElementById('history-container');
+            
+            if (!history || history.length === 0) {
+                container.innerHTML = '<p>История прослушиваний пуста</p>';
+                return;
+            }
+            
+            let html = `<h3>${title}</h3><ul class="history-list">`;
+            history.forEach(entry => {
+                console.log('Обработка записи истории:', entry); // Отладочный вывод
+                
+                // Получаем track_id из записи истории
+                const trackId = entry.track_id || entry.TrackID || entry.track?.ID || entry.Track?.ID;
+                console.log('ID трека из записи:', trackId); // Отладочный вывод
+                
+                if (!trackId) {
+                    console.error('Не удалось получить ID трека:', entry);
+                    return;
+                }
+
+                const track = entry.track || entry.Track;
+                if (!track) {
+                    console.error('Отсутствует информация о треке:', entry);
+                    return;
+                }
+
+                const listenedAt = new Date(entry.listened_at || entry.ListenedAt).toLocaleString();
+                const trackTitle = track.title || track.Title || 'Без названия';
+                const artistName = track.artist_name || track.ArtistName || 'Неизвестный исполнитель';
+                
+                html += `
+                    <li class="history-item">
+                        <div class="history-track-info">
+                            <strong>${trackTitle}</strong> - 
+                            ${artistName}
+                        </div>
+                        <div class="history-timestamp">
+                            Прослушано: ${listenedAt}
+                        </div>
+                        <div class="history-actions">
+                            <button class="play-btn" data-id="${trackId}">Слушать снова</button>
+                        </div>
+                    </li>
+                `;
+            });
+            html += '</ul>';
+            
+            container.innerHTML = html;
+            
+            // Добавляем обработчики для кнопок воспроизведения
+            document.querySelectorAll('.history-list .play-btn').forEach(btn => {
+                btn.addEventListener('click', playTrack);
+            });
+        }
+        
+        // Добавляем обработчики событий для кнопок истории
+        document.getElementById('refresh-history').addEventListener('click', loadHistory);
+        document.getElementById('show-recent-history').addEventListener('click', loadRecentHistory);
+        
+        // Добавляем стили для истории прослушиваний
+        const historyStyles = `
+            <style>
+                .history-list {
+                    list-style: none;
+                    padding: 0;
+                }
+                
+                .history-item {
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    margin-bottom: 10px;
+                    padding: 15px;
+                    background-color: #f9f9f9;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex-wrap: wrap;
+                }
+                
+                .history-track-info {
+                    flex: 1;
+                    margin-right: 20px;
+                }
+                
+                .history-timestamp {
+                    color: #666;
+                    font-size: 0.9em;
+                    margin-right: 20px;
+                }
+                
+                .history-actions {
+                    display: flex;
+                    gap: 10px;
+                }
+                
+                .history-controls {
+                    margin-bottom: 20px;
+                    display: flex;
+                    gap: 10px;
+                }
+                
+                .history-controls button {
+                    background-color: #4CAF50;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                }
+                
+                .history-controls button:hover {
+                    background-color: #45a049;
+                }
+            </style>
+        `;
+        document.head.insertAdjacentHTML('beforeend', historyStyles);
+        
+        // Загружаем историю при загрузке страницы, если пользователь авторизован
+        document.addEventListener('DOMContentLoaded', function() {
+            if (authToken) {
+                loadAlbums();
+                loadGenres();
+                loadPlaylists();
+                loadHistory(); // Добавляем загрузку истории
+            }
+            
+            // Устанавливаем текущую дату в поле даты релиза альбома
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            document.getElementById('album-release-date').value = formattedDate;
+        });
     </script>
 </body>
 </html>

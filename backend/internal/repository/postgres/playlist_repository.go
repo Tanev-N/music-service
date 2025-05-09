@@ -56,12 +56,10 @@ func (r *PlaylistRepository) Save(playlist *models.Playlist) error {
 }
 
 func (r *PlaylistRepository) Delete(id uuid.UUID) error {
-	// Сначала удаляем связи с треками
 	_, err := r.db.Exec(`DELETE FROM playlist_tracks WHERE playlist_id = $1`, id)
 	if err != nil {
 		return err
 	}
-	// Затем удаляем сам плейлист
 	_, err = r.db.Exec(`DELETE FROM playlists WHERE id = $1`, id)
 	return err
 }

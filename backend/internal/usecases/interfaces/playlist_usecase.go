@@ -13,4 +13,6 @@ type PlaylistUseCase interface {
 	EditPlaylistInfo(playlistID uuid.UUID, name, description string) error
 	GetPlaylistTracks(playlistID uuid.UUID) ([]*models.Track, error)
 	GetPlaylistWithTracks(playlistID uuid.UUID) (*models.PlaylistTrack, error)
+	GetUserPlaylists(userID uuid.UUID) ([]*models.Playlist, error)
+	DeletePlaylist(playlistID, userID uuid.UUID) error
 }

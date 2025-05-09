@@ -3,9 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"music-service/internal/models"
 	"music-service/internal/usecases/interfaces"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -18,16 +21,18 @@ const (
 )
 
 type TrackHandler struct {
-	trackUseCase  interfaces.TrackUseCase
-	allowedTypes  []string
-	maxFileSizeMB int
+	trackUseCase   interfaces.TrackUseCase
+	allowedTypes   []string
+	maxFileSizeMB  int
+	historyUseCase interfaces.HistoryUseCase
 }
 
-func NewTrackHandler(trackUseCase interfaces.TrackUseCase, allowedTypes []string, maxFileSizeMB int) *TrackHandler {
+func NewTrackHandler(trackUseCase interfaces.TrackUseCase, allowedTypes []string, maxFileSizeMB int, historyUseCase interfaces.HistoryUseCase) *TrackHandler {
 	return &TrackHandler{
-		trackUseCase:  trackUseCase,
-		allowedTypes:  allowedTypes,
-		maxFileSizeMB: maxFileSizeMB,
+		trackUseCase:   trackUseCase,
+		allowedTypes:   allowedTypes,
+		maxFileSizeMB:  maxFileSizeMB,
+		historyUseCase: historyUseCase,
 	}
 }
 
@@ -193,39 +198,69 @@ func (h *TrackHandler) GetTrackDetails(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// ServeTrackFile отдает аудиофайл для воспроизведения
 func (h *TrackHandler) ServeTrackFile(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	trackID, err := uuid.Parse(vars["id"])
 	if err != nil {
-		http.Error(w, "Недопустимый идентификатор трека", http.StatusBadRequest)
+		http.Error(w, "Некорректный ID трека", http.StatusBadRequest)
 		return
 	}
 
-	// Получаем информацию о треке из базы данных
-	trackDetails, err := h.trackUseCase.GetTrackDetails(trackID)
+	log.Printf("Запрос на стриминг трека: %s", trackID)
+
+	filePath, err := h.trackUseCase.GetTrackFilePath(trackID)
 	if err != nil {
-		http.Error(w, "Трек не найден", http.StatusNotFound)
+		log.Printf("Ошибка при получении пути к файлу: %v", err)
+		http.Error(w, "Ошибка при получении файла", http.StatusInternalServerError)
 		return
 	}
 
-	// Получаем абсолютный путь к файлу
-	trackFilePath, err := h.trackUseCase.GetTrackFilePath(trackID)
+	log.Printf("Путь к файлу трека: %s", filePath)
+
+	file, err := os.Open(filePath)
 	if err != nil {
-		http.Error(w, "Ошибка при получении файла: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Ошибка при открытии файла: %v", err)
+		http.Error(w, "Файл не найден", http.StatusNotFound)
+		return
+	}
+	defer file.Close()
+
+	// Получаем информацию о файле
+	fileInfo, err := file.Stat()
+	if err != nil {
+		log.Printf("Ошибка при получении информации о файле: %v", err)
+		http.Error(w, "Ошибка при чтении файла", http.StatusInternalServerError)
 		return
 	}
 
-	// Отправляем аудиофайл
+	// Устанавливаем заголовки
 	w.Header().Set("Content-Type", "audio/mpeg")
-	w.Header().Set("Content-Disposition", "inline; filename="+trackDetails.Title+".mp3")
-	http.ServeFile(w, r, trackFilePath)
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
+	w.Header().Set("Accept-Ranges", "bytes")
 
-	// Записываем прослушивание, если пользователь авторизован
-	if userIDStr := r.Header.Get("X-User-ID"); userIDStr != "" {
+	// Отправляем файл
+	if _, err := io.Copy(w, file); err != nil {
+		log.Printf("Ошибка при отправке файла: %v", err)
+		http.Error(w, "Ошибка при отправке файла", http.StatusInternalServerError)
+		return
+	}
+
+	// Записываем прослушивание в историю только для авторизованных пользователей
+	userIDStr := r.Header.Get("X-User-ID")
+	if userIDStr != "" {
 		userID, err := uuid.Parse(userIDStr)
-		if err == nil {
-			go h.trackUseCase.PlayTrack(userID, trackID)
+		if err != nil {
+			log.Printf("Ошибка при парсинге ID пользователя: %v", err)
+			return
 		}
+
+		err = h.historyUseCase.RecordPlayback(userID, trackID)
+		if err != nil {
+			log.Printf("Ошибка при записи истории прослушивания: %v", err)
+			return
+		}
+		log.Printf("История прослушивания записана для пользователя %s и трека %s", userID, trackID)
 	}
 }
 

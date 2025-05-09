@@ -223,26 +223,22 @@ func (uc *albumUseCase) ListAll() ([]*models.Album, error) {
 }
 
 func (uc *albumUseCase) Delete(albumID uuid.UUID) error {
-	// Проверяем, что альбом существует
 	_, err := uc.albumRepo.FindByID(albumID)
 	if err != nil {
 		return fmt.Errorf("album not found: %w", err)
 	}
 
-	// Получаем треки альбома
 	tracks, err := uc.albumRepo.GetTracks(albumID)
 	if err != nil {
 		return fmt.Errorf("failed to get album tracks: %w", err)
 	}
 
-	// Удаляем все треки альбома
 	for _, track := range tracks {
 		if err := uc.trackRepo.Delete(track.ID); err != nil {
 			return fmt.Errorf("failed to delete track %s: %w", track.ID, err)
 		}
 	}
 
-	// Удаляем альбом
 	if err := uc.albumRepo.Delete(albumID); err != nil {
 		return fmt.Errorf("failed to delete album: %w", err)
 	}

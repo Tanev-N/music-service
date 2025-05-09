@@ -61,12 +61,23 @@ func main() {
 		repo.Genre,
 		repo.Track,
 	)
+	playlistUseCase := usecases.NewPlaylistUseCase(
+		repo.Playlist,
+		repo.Track,
+		repo.User,
+	)
+	historyUseCase := usecases.NewHistoryUseCase(
+		repo.History,
+		repo.Track,
+	)
 
 	r := router.NewRouter(
 		userUseCase,
 		trackUseCase,
 		albumUseCase,
 		genreUseCase,
+		playlistUseCase,
+		historyUseCase,
 		cfg.Storage.AllowedTypes,
 		cfg.Storage.MaxFileSizeMB,
 	)

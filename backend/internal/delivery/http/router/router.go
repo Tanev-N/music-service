@@ -17,6 +17,8 @@ func NewRouter(
 	trackUseCase interfaces.TrackUseCase,
 	albumUseCase interfaces.AlbumUseCase,
 	genreUseCase interfaces.GenreUseCase,
+	playlistUseCase interfaces.PlaylistUseCase,
+	historyUseCase interfaces.HistoryUseCase,
 	allowedTypes []string,
 	maxFileSizeMB int,
 ) *Router {
@@ -26,11 +28,14 @@ func NewRouter(
 	}
 
 	r.Use(middleware.CORS)
+	r.Use(middleware.AuthMiddleware(userUseCase))
 
 	userHandler := handlers.NewUserHandler(userUseCase)
-	trackHandler := handlers.NewTrackHandler(trackUseCase, allowedTypes, maxFileSizeMB)
+	trackHandler := handlers.NewTrackHandler(trackUseCase, allowedTypes, maxFileSizeMB, historyUseCase)
 	albumHandler := handlers.NewAlbumHandler(albumUseCase)
 	genreHandler := handlers.NewGenreHandler(genreUseCase)
+	playlistHandler := handlers.NewPlaylistHandler(playlistUseCase, userUseCase)
+	historyHandler := handlers.NewHistoryHandler(historyUseCase)
 
 	v1 := r.PathPrefix("/api/v1").Subrouter()
 
@@ -60,6 +65,19 @@ func NewRouter(
 	v1.HandleFunc("/genres/tracks/{id}", genreHandler.GetGenresByTrack).Methods("GET", "OPTIONS")
 	v1.HandleFunc("/genres/tracks/{id}/genres", genreHandler.AssignGenreToTrack).Methods("POST", "OPTIONS")
 	v1.HandleFunc("/genres/tracks/{trackId}/genres/{genreId}", genreHandler.RemoveGenreFromTrack).Methods("DELETE", "OPTIONS")
+
+	v1.HandleFunc("/playlists", playlistHandler.CreatePlaylist).Methods("POST", "OPTIONS")
+	v1.HandleFunc("/playlists", playlistHandler.GetUserPlaylists).Methods("GET", "OPTIONS")
+	v1.HandleFunc("/playlists/{id}", playlistHandler.GetPlaylistWithTracks).Methods("GET", "OPTIONS")
+	v1.HandleFunc("/playlists/{id}", playlistHandler.EditPlaylistInfo).Methods("PUT", "OPTIONS")
+	v1.HandleFunc("/playlists/{id}", playlistHandler.DeletePlaylist).Methods("DELETE", "OPTIONS")
+	v1.HandleFunc("/playlists/{id}/tracks", playlistHandler.GetPlaylistTracks).Methods("GET", "OPTIONS")
+	v1.HandleFunc("/playlists/{id}/tracks", playlistHandler.AddTrackToPlaylist).Methods("POST", "OPTIONS")
+	v1.HandleFunc("/playlists/{playlistId}/tracks/{trackId}", playlistHandler.RemoveTrackFromPlaylist).Methods("DELETE", "OPTIONS")
+
+	v1.HandleFunc("/history/tracks/{trackId}", historyHandler.RecordPlayback).Methods("POST", "OPTIONS")
+	v1.HandleFunc("/history", historyHandler.GetUserHistory).Methods("GET", "OPTIONS")
+	v1.HandleFunc("/history/recent", historyHandler.GetRecentPlays).Methods("GET", "OPTIONS")
 
 	return router
 }

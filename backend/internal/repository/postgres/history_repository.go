@@ -31,8 +31,20 @@ func (r *HistoryRepository) AddEntry(userID uuid.UUID, trackID uuid.UUID) error 
 func (r *HistoryRepository) GetHistory(userID uuid.UUID) ([]*models.ListeningHistory, error) {
 	var history []*models.ListeningHistory
 	query := `
-		SELECT lh.id, lh.user_id, lh.track_id, lh.listened_at
+		SELECT 
+			lh.id,
+			lh.user_id,
+			t.id as track_id,
+			lh.listened_at,
+			t.title,
+			t.artist_name,
+			t.duration,
+			t.cover_url,
+			t.album_id,
+			a.title as album_title
 		FROM listening_history lh
+		JOIN tracks t ON t.id = lh.track_id
+		LEFT JOIN albums a ON t.album_id = a.id
 		WHERE lh.user_id = $1
 		ORDER BY lh.listened_at DESC
 		LIMIT 100
@@ -45,15 +57,39 @@ func (r *HistoryRepository) GetHistory(userID uuid.UUID) ([]*models.ListeningHis
 
 	for rows.Next() {
 		var entry models.ListeningHistory
+		var albumID sql.NullString
+		var albumTitle sql.NullString
+
 		err := rows.Scan(
 			&entry.ID,
 			&entry.UserID,
 			&entry.TrackID,
 			&entry.ListenedAt,
+			&entry.Track.Title,
+			&entry.Track.ArtistName,
+			&entry.Track.Duration,
+			&entry.Track.CoverURL,
+			&albumID,
+			&albumTitle,
 		)
 		if err != nil {
 			return nil, err
 		}
+
+		// Устанавливаем ID трека
+		entry.Track.ID = entry.TrackID
+
+		// Устанавливаем информацию об альбоме, если она есть
+		if albumID.Valid {
+			id, err := uuid.Parse(albumID.String)
+			if err == nil {
+				entry.Track.AlbumID = id
+				if albumTitle.Valid {
+					entry.Track.AlbumTitle = albumTitle.String
+				}
+			}
+		}
+
 		history = append(history, &entry)
 	}
 

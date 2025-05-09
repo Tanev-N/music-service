@@ -11,7 +11,7 @@ db:
   sslmode: "disable" 
 
 storage:
-  tracks_dir: "./storage/tracks"
+  tracks_dir: "/app/storage/tracks"
   max_file_size_mb: 20
   allowed_types:
     - "audio/mpeg"

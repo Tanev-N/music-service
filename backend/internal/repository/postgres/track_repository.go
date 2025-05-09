@@ -8,7 +8,6 @@ import (
 	"music-service/internal/repository/interfaces"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
@@ -128,14 +127,18 @@ func (r *TrackRepository) SaveTrackFile(trackID uuid.UUID, fileReader io.Reader,
 	}
 
 	trackIDStr := trackID.String()
-	subDir := filepath.Join(r.tracksDir, trackIDStr[:2], trackIDStr[2:4])
-	if err := os.MkdirAll(subDir, 0755); err != nil {
+	relativeDir := filepath.Join(trackIDStr[:2], trackIDStr[2:4])
+	absoluteDir := filepath.Join(r.tracksDir, relativeDir)
+
+	if err := os.MkdirAll(absoluteDir, 0755); err != nil {
 		return "", fmt.Errorf("не удалось создать поддиректорию: %w", err)
 	}
 
-	filePath := filepath.Join(subDir, fmt.Sprintf("%s.mp3", trackIDStr))
+	fileName := fmt.Sprintf("%s.mp3", trackIDStr)
+	absolutePath := filepath.Join(absoluteDir, fileName)
+	relativePath := filepath.Join(relativeDir, fileName)
 
-	file, err := os.Create(filePath)
+	file, err := os.Create(absolutePath)
 	if err != nil {
 		return "", fmt.Errorf("не удалось создать файл: %w", err)
 	}
@@ -143,12 +146,10 @@ func (r *TrackRepository) SaveTrackFile(trackID uuid.UUID, fileReader io.Reader,
 
 	_, err = io.Copy(file, fileReader)
 	if err != nil {
-		os.Remove(filePath)
+		os.Remove(absolutePath)
 		return "", fmt.Errorf("не удалось сохранить файл: %w", err)
 	}
 
-	relativePath := strings.TrimPrefix(filePath, r.tracksDir)
-	relativePath = strings.TrimPrefix(relativePath, "/")
 	return relativePath, nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"music-service/internal/models"
 	"music-service/internal/repository/interfaces"
 	usecaseInterfaces "music-service/internal/usecases/interfaces"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -97,11 +98,19 @@ func (uc *trackUseCase) GetTrackDetails(id uuid.UUID) (*models.TrackDetails, err
 	}
 
 	return &models.TrackDetails{
-		Track:     *track,
-		Album:     album,
-		Genres:    genres,
-		PlayCount: playCount,
-		Duration:  track.Duration,
+		ID:         track.ID,
+		Title:      track.Title,
+		ArtistName: track.ArtistName,
+		Duration:   track.Duration,
+		FilePath:   track.FilePath,
+		MimeType:   "audio/mpeg",
+		CoverURL:   track.CoverURL,
+		AddedDate:  track.AddedDate,
+		CreatedAt:  track.AddedDate,
+		UpdatedAt:  track.UpdatedAt,
+		PlayCount:  playCount,
+		Album:      album,
+		Genres:     genres,
 	}, nil
 }
 
@@ -203,5 +212,10 @@ func (uc *trackUseCase) GetTrackFilePath(trackID uuid.UUID) (string, error) {
 	}
 
 	fullPath := filepath.Join(tracksDir, track.FilePath)
+
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		return "", fmt.Errorf("файл трека не найден: %w", err)
+	}
+
 	return fullPath, nil
 }

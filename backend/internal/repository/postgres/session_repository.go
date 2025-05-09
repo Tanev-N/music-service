@@ -20,10 +20,10 @@ func NewSessionRepository(db *sql.DB) interfaces.SessionRepository {
 	}
 }
 
-func (r *SessionRepository) CreateSession(userID uuid.UUID) (*models.Session, error) {
+func (r *SessionRepository) CreateSession(userID uuid.UUID, token string) (*models.Session, error) {
 	session := &models.Session{
 		ID:        uuid.New(),
-		Token:     uuid.New().String(),
+		Token:     token,
 		ExpiresAt: time.Now().Add(24 * time.Hour),
 	}
 
@@ -58,16 +58,13 @@ func (r *SessionRepository) DeleteAllForUser(userID uuid.UUID) error {
 	return err
 }
 
-// GetSessionByToken получает сессию и пользователя по токену
 func (r *SessionRepository) GetSessionByToken(token string) (*models.Session, *models.User, error) {
 	var session models.Session
 	var user models.User
 	var userID uuid.UUID
 
-	// Добавляем отладочный вывод
 	fmt.Printf("Ищем сессию с токеном: %s\n", token)
 
-	// Проверяем, существует ли сессия с таким токеном
 	var count int
 	countErr := r.db.QueryRow(`SELECT COUNT(*) FROM sessions WHERE token = $1`, token).Scan(&count)
 	if countErr != nil {

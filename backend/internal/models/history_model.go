@@ -11,4 +11,5 @@ type ListeningHistory struct {
 	UserID     uuid.UUID
 	TrackID    uuid.UUID
 	ListenedAt time.Time
+	Track      Track
 }

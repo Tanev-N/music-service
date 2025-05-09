@@ -12,8 +12,9 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Таблица сессий
 CREATE TABLE IF NOT EXISTS sessions (
-    id VARCHAR(255) PRIMARY KEY,
+    id UUID PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(255) NOT NULL UNIQUE,
     expires_at TIMESTAMP NOT NULL
 );
 
@@ -59,8 +60,10 @@ CREATE TABLE IF NOT EXISTS track_genres (
 CREATE TABLE IF NOT EXISTS playlists (
     id UUID PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    description TEXT,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    cover_url VARCHAR(255),
+    created_date TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 

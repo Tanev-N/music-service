@@ -40,12 +40,10 @@ func (r *GenreRepository) Save(genre *models.Genre) error {
 }
 
 func (r *GenreRepository) Delete(id uuid.UUID) error {
-	// Сначала удаляем связи с треками
 	_, err := r.db.Exec(`DELETE FROM track_genres WHERE genre_id = $1`, id)
 	if err != nil {
 		return err
 	}
-	// Затем удаляем сам жанр
 	_, err = r.db.Exec(`DELETE FROM genres WHERE id = $1`, id)
 	return err
 }

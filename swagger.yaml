@@ -75,15 +75,35 @@ paths:
                     $ref: '#/components/schemas/User'
                   session:
                     $ref: '#/components/schemas/Session'
+              example:
+                user:
+                  id: "123e4567-e89b-12d3-a456-426614174000"
+                  login: "user123"
+                  permission: "user"
+                  created_at: "2024-01-01T12:00:00Z"
+                  updated_at: "2024-01-01T12:00:00Z"
+                session:
+                  id: "987fcdeb-51a2-43f7-9876-543210987654"
+                  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  expires_at: "2024-01-02T12:00:00Z"
         '401':
           description: Неверные учетные данные
-        '500':
-          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+              example:
+                error: "Invalid credentials"
 
   /users/logout:
     post:
       summary: Выход из аккаунта
       operationId: logoutUser
+      security:
+        - BearerAuth: []
       tags:
         - users
       responses:
@@ -98,6 +118,8 @@ paths:
     get:
       summary: Получить профиль пользователя
       operationId: getUserProfile
+      security:
+        - BearerAuth: []
       tags:
         - users
       parameters:
@@ -122,6 +144,8 @@ paths:
     delete:
       summary: Удалить пользователя
       operationId: deleteUser
+      security:
+        - BearerAuth: []
       tags:
         - users
       parameters:
@@ -143,6 +167,8 @@ paths:
     patch:
       summary: Обновить разрешения пользователя
       operationId: updateUserPermissions
+      security:
+        - BearerAuth: []
       tags:
         - users
       parameters:
@@ -197,6 +223,20 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Track'
+              example:
+                - id: "123e4567-e89b-12d3-a456-426614174000"
+                  title: "My Song"
+                  duration: 180
+                  file_path: "/storage/tracks/123.mp3"
+                  album_id: "456e7890-12d3-a456-426614174000"
+                  artist_name: "Artist Name"
+                  cover_url: "https://example.com/covers/123.jpg"
+                  added_date: "2024-01-01T12:00:00Z"
+                  updated_at: "2024-01-01T12:00:00Z"
+                  play_count: 100
+                  genres:
+                    - id: "789e0123-45f6-789a-bcde-123456789012"
+                      name: "Rock"
         '400':
           description: Некорректные параметры запроса
         '500':
@@ -270,6 +310,7 @@ paths:
   /tracks/{id}:
     get:
       summary: Получить детали трека
+      description: Публичный эндпоинт, не требует авторизации
       operationId: getTrackDetails
       tags:
         - tracks
@@ -321,6 +362,7 @@ paths:
   /tracks/{id}/stream:
     get:
       summary: Прослушать трек (потоковая передача MP3 файла)
+      description: Публичный эндпоинт, не требует авторизации
       operationId: streamTrack
       tags:
         - tracks
@@ -368,6 +410,7 @@ paths:
   /albums:
     get:
       summary: Получить список всех альбомов
+      description: Публичный эндпоинт, не требует авторизации
       operationId: listAllAlbums
       tags:
         - albums
@@ -429,6 +472,7 @@ paths:
   /albums/{id}:
     get:
       summary: Получить детали альбома
+      description: Публичный эндпоинт, не требует авторизации
       operationId: getAlbumDetails
       tags:
         - albums
@@ -446,6 +490,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AlbumWithTracks'
+              example:
+                id: "123e4567-e89b-12d3-a456-426614174000"
+                title: "Album Title"
+                artist: "Artist Name"
+                release_date: "2024-01-01T00:00:00Z"
+                cover_url: "https://example.com/covers/album123.jpg"
+                created_at: "2024-01-01T12:00:00Z"
+                updated_at: "2024-01-01T12:00:00Z"
+                tracks:
+                  - id: "456e7890-12d3-a456-426614174000"
+                    title: "Track 1"
+                    duration: 180
+                    artist_name: "Artist Name"
+                    file_path: "/storage/tracks/456.mp3"
+                    cover_url: "https://example.com/covers/456.jpg"
+                    added_date: "2024-01-01T12:00:00Z"
+                    updated_at: "2024-01-01T12:00:00Z"
+                    play_count: 50
         '404':
           description: Альбом не найден
         '500':
@@ -594,42 +656,40 @@ paths:
           description: Ошибка сервера
 
   /playlists:
-    post:
-      summary: Создать новый плейлист
-      operationId: createPlaylist
+    get:
+      summary: Получить список плейлистов пользователя
+      operationId: getUserPlaylists
+      security:
+        - BearerAuth: []
       tags:
         - playlists
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  example: "My Favorite Songs"
-                description:
-                  type: string
-                  example: "A collection of my favorite songs"
-              required:
-                - name
       responses:
-        '201':
-          description: Плейлист успешно создан
+        '200':
+          description: Список плейлистов пользователя
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Playlist'
-        '400':
-          description: Некорректные данные запроса
-        '500':
-          description: Ошибка сервера
+                type: array
+                items:
+                  $ref: '#/components/schemas/Playlist'
+              example:
+                - id: "123e4567-e89b-12d3-a456-426614174000"
+                  user_id: "456e7890-12d3-a456-426614174000"
+                  name: "My Favorite Songs"
+                  description: "Collection of my favorite tracks"
+                  created_at: "2024-01-01T12:00:00Z"
+                - ID: "789e0123-45f6-789a-bcde-123456789012"
+                  UserID: "456e7890-12d3-a456-426614174000"
+                  Name: "Rock Playlist"
+                  Description: "Best rock songs"
+                  CreatedAt: "2024-01-02T12:00:00Z"
 
   /playlists/{id}:
     get:
       summary: Получить плейлист с треками
       operationId: getPlaylistWithTracks
+      security:
+        - BearerAuth: []
       tags:
         - playlists
       parameters:
@@ -646,14 +706,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PlaylistTrack'
-        '404':
-          description: Плейлист не найден
-        '500':
-          description: Ошибка сервера
-    
+              example:
+                playlist:
+                  ID: "123e4567-e89b-12d3-a456-426614174000"
+                  Name: "My Playlist"
+                  Description: "My favorite tracks"
+                  UserID: "456e7890-12d3-a456-426614174000"
+                  CreatedAt: "2024-01-01T12:00:00Z"
+                tracks:
+                  - ID: "789e0123-45f6-789a-bcde-123456789012"
+                    Title: "Track Title"
+                    Duration: 180
+                    ArtistName: "Artist Name"
+                    AlbumTitle: "Album Name"
+                    CoverUrl: "https://example.com/covers/789.jpg"
+                    PlayCount: 50
+
+  /playlists/{id}:
     put:
       summary: Обновить информацию о плейлисте
       operationId: editPlaylistInfo
+      security:
+        - BearerAuth: []
       tags:
         - playlists
       parameters:
@@ -681,6 +755,36 @@ paths:
       responses:
         '200':
           description: Информация о плейлисте обновлена
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет доступа к редактированию плейлиста
+        '404':
+          description: Плейлист не найден
+        '500':
+          description: Ошибка сервера
+          
+    delete:
+      summary: Удалить плейлист
+      operationId: deletePlaylist
+      security:
+        - BearerAuth: []
+      tags:
+        - playlists
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Плейлист успешно удален
+        '401':
+          description: Не авторизован
+        '403':
+          description: Нет доступа к удалению плейлиста
         '404':
           description: Плейлист не найден
         '500':
@@ -690,6 +794,8 @@ paths:
     get:
       summary: Получить треки из плейлиста
       operationId: getPlaylistTracks
+      security:
+        - BearerAuth: []
       tags:
         - playlists
       parameters:
@@ -716,6 +822,8 @@ paths:
     post:
       summary: Добавить трек в плейлист
       operationId: addTrackToPlaylist
+      security:
+        - BearerAuth: []
       tags:
         - playlists
       parameters:
@@ -749,6 +857,8 @@ paths:
     delete:
       summary: Удалить трек из плейлиста
       operationId: removeTrackFromPlaylist
+      security:
+        - BearerAuth: []
       tags:
         - playlists
       parameters:
@@ -787,45 +897,16 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Genre'
-        '500':
-          description: Ошибка сервера
-    
-    post:
-      summary: Создать новый жанр
-      operationId: createGenre
-      security:
-        - BearerAuth: []
-      tags:
-        - genres
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  example: "Rock"
-              required:
-                - name
-      responses:
-        '201':
-          description: Жанр успешно создан
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Genre'
-        '400':
-          description: Некорректные данные запроса
-        '403':
-          description: Недостаточно прав (требуются права администратора)
-        '500':
-          description: Ошибка сервера
+              example:
+                - id: "123e4567-e89b-12d3-a456-426614174000"
+                  name: "Rock"
+                - ID: "456e7890-12d3-a456-426614174000"
+                  Name: "Jazz"
 
   /genres/tracks/{id}:
     get:
       summary: Получить жанры для трека
+      description: Публичный эндпоинт, не требует авторизации
       operationId: getGenresByTrack
       tags:
         - genres
@@ -845,10 +926,11 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Genre'
-        '404':
-          description: Трек не найден
-        '500':
-          description: Ошибка сервера
+              example:
+                - id: "123e4567-e89b-12d3-a456-426614174000"
+                  name: "Rock"
+                - ID: "456e7890-12d3-a456-426614174000"
+                  Name: "Alternative"
 
   /genres/tracks/{id}/genres:
     post:
@@ -924,6 +1006,8 @@ paths:
     get:
       summary: Получить историю прослушиваний пользователя
       operationId: getUserHistory
+      security:
+        - BearerAuth: []
       tags:
         - history
       responses:
@@ -935,6 +1019,18 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ListeningHistory'
+              example:
+                - id: "123e4567-e89b-12d3-a456-426614174000"
+                  user_id: "456e7890-12d3-a456-426614174000"
+                  track_id: "789e0123-45f6-789a-bcde-123456789012"
+                  listened_at: "2024-01-01T12:00:00Z"
+                  track:
+                    id: "789e0123-45f6-789a-bcde-123456789012"
+                    title: "Track Title"
+                    artist_name: "Artist Name"
+                    duration: 180
+                    album_title: "Album Title"
+                    cover_url: "https://example.com/covers/123.jpg"
         '401':
           description: Не авторизован
         '500':
@@ -944,11 +1040,14 @@ paths:
     get:
       summary: Получить недавние прослушивания
       operationId: getRecentPlays
+      security:
+        - BearerAuth: []
       tags:
         - history
       parameters:
         - name: hours
           in: query
+          description: Количество часов, за которые нужно получить историю (по умолчанию 24)
           schema:
             type: integer
             default: 24
@@ -962,15 +1061,26 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ListeningHistory'
-        '401':
-          description: Не авторизован
-        '500':
-          description: Ошибка сервера
+              example:
+                - id: "123e4567-e89b-12d3-a456-426614174000"
+                  user_id: "456e7890-12d3-a456-426614174000"
+                  track_id: "789e0123-45f6-789a-bcde-123456789012"
+                  listened_at: "2024-01-01T12:00:00Z"
+                  track:
+                    ID: "789e0123-45f6-789a-bcde-123456789012"
+                    Title: "Track Title"
+                    ArtistName: "Artist Name"
+                    Duration: 180
+                    AlbumTitle: "Album Title"
+                    CoverUrl: "https://example.com/covers/789.jpg"
+                    PlayCount: 50
 
   /history/tracks/{trackId}:
     post:
       summary: Записать прослушивание трека
       operationId: recordPlayback
+      security:
+        - BearerAuth: []
       tags:
         - history
       parameters:
@@ -983,6 +1093,8 @@ paths:
       responses:
         '200':
           description: Прослушивание записано
+        '400':
+          description: Некорректный ID трека
         '401':
           description: Не авторизован
         '404':
@@ -1038,32 +1150,73 @@ components:
         id:
           type: string
           format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        ID:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         title:
           type: string
+          example: "My Song"
+        Title:
+          type: string
+          example: "My Song"
         duration:
           type: integer
           description: Продолжительность трека в секундах
+          example: 180
+        Duration:
+          type: integer
+          description: Продолжительность трека в секундах
+          example: 180
         file_path:
           type: string
           description: Относительный путь к MP3 файлу
+          example: "/storage/tracks/123.mp3"
+        FilePath:
+          type: string
+          description: Относительный путь к MP3 файлу
+          example: "/storage/tracks/123.mp3"
         album_id:
           type: string
           format: uuid
-          description: ID альбома, к которому принадлежит трек (обязательно)
+          description: ID альбома, к которому принадлежит трек
+          example: "456e7890-12d3-a456-426614174000"
+        AlbumID:
+          type: string
+          format: uuid
+          description: ID альбома, к которому принадлежит трек
+          example: "456e7890-12d3-a456-426614174000"
+        album_title:
+          type: string
+          description: Название альбома
+          example: "Album Name"
+        AlbumTitle:
+          type: string
+          description: Название альбома
+          example: "Album Name"
         artist_name:
           type: string
+          example: "Artist Name"
+        ArtistName:
+          type: string
+          example: "Artist Name"
         cover_url:
           type: string
           description: URL обложки трека
-        added_date:
+          example: "https://example.com/covers/123.jpg"
+        CoverUrl:
           type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
+          description: URL обложки трека
+          example: "https://example.com/covers/123.jpg"
         play_count:
           type: integer
           description: Количество прослушиваний
+          example: 100
+        PlayCount:
+          type: integer
+          description: Количество прослушиваний
+          example: 100
         genres:
           type: array
           items:
@@ -1086,47 +1239,41 @@ components:
           format: uuid
         title:
           type: string
+        artist_name:
+          type: string
         duration:
           type: integer
           description: Продолжительность трека в секундах
-        artist_name:
+        file_path:
+          type: string
+        mime_type:
           type: string
         cover_url:
           type: string
-          description: URL обложки трека
         added_date:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
           type: string
           format: date-time
         play_count:
           type: integer
-          description: Количество прослушиваний
-        album_id:
-          type: string
-          format: uuid
-          description: ID альбома, к которому принадлежит трек
-        album_title:
-          type: string
-          description: Название альбома, если трек принадлежит альбому
-        album_artist:
-          type: string
-          description: Исполнитель альбома, если трек принадлежит альбому
+        album:
+          $ref: '#/components/schemas/Album'
         genres:
           type: array
           items:
-            type: object
-            properties:
-              id:
-                type: string
-                format: uuid
-              name:
-                type: string
+            $ref: '#/components/schemas/Genre'
       required:
         - id
         - title
-        - duration
         - artist_name
-        - added_date
-        - play_count
+        - duration
+        - file_path
+        - mime_type
     
     Album:
       type: object
@@ -1193,16 +1340,39 @@ components:
         id:
           type: string
           format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        ID:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         user_id:
           type: string
           format: uuid
+          example: "456e7890-12d3-a456-426614174000"
+        UserID:
+          type: string
+          format: uuid
+          example: "456e7890-12d3-a456-426614174000"
         name:
           type: string
+          example: "My Playlist"
+        Name:
+          type: string
+          example: "My Playlist"
         description:
           type: string
+          example: "My favorite tracks"
+        Description:
+          type: string
+          example: "My favorite tracks"
         created_at:
           type: string
           format: date-time
+          example: "2024-01-01T12:00:00Z"
+        CreatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00Z"
       required:
         - id
         - user_id
@@ -1218,6 +1388,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Track'
+      required:
+        - playlist
+        - tracks
 
     Genre:
       type: object
@@ -1225,8 +1398,17 @@ components:
         id:
           type: string
           format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        ID:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
         name:
           type: string
+          example: "Rock"
+        Name:
+          type: string
+          example: "Rock"
       required:
         - id
         - name
@@ -1252,7 +1434,8 @@ components:
         - id
         - user_id
         - track_id
-        - listened_at 
+        - listened_at
+        - track
 
   securitySchemes:
     BearerAuth:

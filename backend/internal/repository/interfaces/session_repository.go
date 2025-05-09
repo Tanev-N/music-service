@@ -7,7 +7,7 @@ import (
 )
 
 type SessionRepository interface {
-	CreateSession(userID uuid.UUID) (*models.Session, error)
+	CreateSession(userID uuid.UUID, token string) (*models.Session, error)
 	GetSession(sessionID string) (*models.Session, error)
 	DeleteSession(sessionID string) error
 	DeleteAllForUser(userID uuid.UUID) error

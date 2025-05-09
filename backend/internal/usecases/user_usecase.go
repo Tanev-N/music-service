@@ -103,19 +103,13 @@ func (uc *userUseCase) Authenticate(login, password string) (*models.User, *mode
 	}
 
 	fmt.Println("Пароль верный, создаем сессию")
-	session := &models.Session{
-		ID:        uuid.New(),
-		Token:     generateToken(),
-		ExpiresAt: time.Now().Add(24 * time.Hour),
-	}
-
-	createdSession, err := uc.sessionRepo.CreateSession(user.ID)
+	token := generateToken()
+	createdSession, err := uc.sessionRepo.CreateSession(user.ID, token)
 	if err != nil {
 		fmt.Printf("Ошибка создания сессии: %v\n", err)
 		return nil, nil, err
 	}
 
-	createdSession.Token = session.Token
 	fmt.Printf("Сессия создана: ID=%s, Token=%s\n", createdSession.ID, createdSession.Token)
 
 	return user, createdSession, nil

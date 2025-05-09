@@ -180,3 +180,33 @@ func (uc *playlistUseCase) GetPlaylistWithTracks(playlistID uuid.UUID) (*models.
 		Tracks:   tracks,
 	}, nil
 }
+
+func (uc *playlistUseCase) GetUserPlaylists(userID uuid.UUID) ([]*models.Playlist, error) {
+	if _, err := uc.userRepo.FindByID(userID); err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+
+	playlists, err := uc.playlistRepo.GetUserPlaylists(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user playlists: %w", err)
+	}
+
+	return playlists, nil
+}
+
+func (uc *playlistUseCase) DeletePlaylist(playlistID, userID uuid.UUID) error {
+	playlist, err := uc.playlistRepo.FindByID(playlistID)
+	if err != nil {
+		return fmt.Errorf("playlist not found: %w", err)
+	}
+
+	if playlist.UserID != userID {
+		return errors.New("user is not the owner of the playlist")
+	}
+
+	if err := uc.playlistRepo.Delete(playlistID); err != nil {
+		return fmt.Errorf("failed to delete playlist: %w", err)
+	}
+
+	return nil
+}
