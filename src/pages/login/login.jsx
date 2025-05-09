@@ -11,7 +11,7 @@ const LoginPage = () => {
   const [form, setForm] = useState({ login: "", password: "" });
   const [errors, setErrors] = useState({ password: "" });
   const navigate = useNavigate();
-  const { login: authLogin } = useContext(AuthContext);
+  const { login: authLogin} = useContext(AuthContext);
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({
@@ -26,9 +26,9 @@ const LoginPage = () => {
     if (errors.password == "" && form.login != "" && form.password != "") {
       const response = await Login(form.login, form.password);
       if (response.ok) {
-        const { id, login, permission } = await response.json();
-        authLogin({ id, login, permission });
-        navigate("/");
+        const { user } = await response.json();
+        authLogin({ login: user.login, id: user.id, permission: user.permission });
+        navigate("/servise");
       } else {
         setErrors({
           password: "Неправильный логин или пароль",
