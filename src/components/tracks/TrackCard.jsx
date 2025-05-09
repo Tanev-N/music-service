@@ -5,12 +5,14 @@ import {
   assignGenreToTrack,
   getGenresByTrack,
 } from "@/components/genre/genre-api";
+import { writeTrackOnHistory } from "../history/history-api";
 import { AuthContext } from "@/features/auth-provider/auth-provider";
 import styles from "./track-card.module.css";
 import { Button } from "../button/button";
 import GenreCard from "../genre/genreCard";
 import { deleteTrack } from "./tracks-api";
-const TrackCard = ({ track, onRemoveFromAlbum, isDeletebly}) => {
+
+const TrackCard = ({ track, onRemoveFromAlbum, isDeletebly }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const audioRef = useRef(null);
@@ -18,7 +20,9 @@ const TrackCard = ({ track, onRemoveFromAlbum, isDeletebly}) => {
   const isAdmin = user.permission === "admin";
   const token = user.token;
   const [visible, setVisible] = useState(true);
-  const [trackGenres, setTrackGenres] = useState(Array.isArray(track.genres) ? track.genres : []);
+  const [trackGenres, setTrackGenres] = useState(
+    Array.isArray(track.genres) ? track.genres : []
+  );
   const [isGenreDropdownOpen, setIsGenreDropdownOpen] = useState(false);
   const [availableGenres, setAvailableGenres] = useState([]);
 
@@ -40,7 +44,7 @@ const TrackCard = ({ track, onRemoveFromAlbum, isDeletebly}) => {
     fetchGenres();
   }, [track.ID]);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
@@ -48,6 +52,11 @@ const TrackCard = ({ track, onRemoveFromAlbum, isDeletebly}) => {
     } else {
       audioRef.current.play();
       setIsPlaying(true);
+
+      const response = await writeTrackOnHistory(track.ID, token);
+      if (!response.ok) {
+        console.error("Ошибка при записи трека в историю");
+      }
     }
   };
 
@@ -137,16 +146,17 @@ const TrackCard = ({ track, onRemoveFromAlbum, isDeletebly}) => {
           ></div>
         </div>
         <div className={styles.genreListContainer}>
-          {trackGenres && trackGenres.map((genre) => (
-            <GenreCard 
-              key={genre.id}
-              name={genre.name}
-              id={genre.id}
-              idTrack={track.ID}
-              deletably={true}
-              onRemove={() => handleRemoveGenre(genre.id)}
-            />
-          ))}
+          {trackGenres &&
+            trackGenres.map((genre) => (
+              <GenreCard
+                key={genre.id}
+                name={genre.name}
+                id={genre.id}
+                idTrack={track.ID}
+                deletably={true}
+                onRemove={() => handleRemoveGenre(genre.id)}
+              />
+            ))}
         </div>
       </div>
       {isAdmin && isDeletebly && (
@@ -172,7 +182,7 @@ const TrackCard = ({ track, onRemoveFromAlbum, isDeletebly}) => {
                     className={styles.genreOption}
                     onClick={() => handleAddGenre(genre.id)}
                   >
-                    <GenreCard 
+                    <GenreCard
                       name={genre.name}
                       id={genre.id}
                       idTrack={track.ID}

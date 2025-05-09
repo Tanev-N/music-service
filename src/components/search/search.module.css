@@ -1,0 +1,37 @@
+.searchContainer {
+
+  padding: 24px;
+  max-width: 1200px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+
+.title {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #414040;
+}
+
+.searchBar {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.resultsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.noResults {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #777;
+  padding: 16px;
+}

@@ -1,0 +1,22 @@
+.historyContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+}
+.servise_title {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #414040;
+    padding: 16px;
+}
+
+/* New style for no-history span */
+.noHistory {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #555;
+  padding: 16px;
+}
