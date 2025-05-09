@@ -5,7 +5,7 @@ const Button = ({ text, onClick, type }) => {
     <button
       className={`${styles.button} ${
         type === "submit" ? styles["sign-up"] : ""
-      }`}
+      } ${type === "delete" ? styles["delete"] : ""}`}
       onClick={onClick}
     >
       {text}

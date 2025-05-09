@@ -1,0 +1,63 @@
+
+.album_card {
+    display: flex;
+    flex-direction: row;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px; /* уменьшили радиус */
+    padding: 10px; /* уменьшили отступ */
+    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.15);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: fadeIn 0.8s;
+    margin-bottom: 5px;
+}
+.album_card:hover {
+    cursor: pointer;
+}
+
+.album_cover {
+    width: 120px; /* уменьшили размеры */
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-right: 12px; /* уменьшили отступ между изображением и информацией */
+}
+
+.album_card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 36px 0 rgba(31, 38, 135, 0.2);
+}
+
+
+
+
+
+.album_info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8px;
+}
+
+.album_title {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #2d2e2e;
+    margin-bottom: 8px;
+    text-shadow: 1px 2px 8px #e3e3e3;
+}
+
+.album_artist {
+    color: #3e403f;
+    font-size: 0.9em;
+    margin-bottom: 4px;
+    font-style: italic;
+}
+
+.album_date {
+    color: #6c6e6d;
+    font-size: 0.7em;
+    font-style: italic;
+}
+
+
+

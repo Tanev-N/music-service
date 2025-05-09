@@ -26,8 +26,8 @@ const LoginPage = () => {
     if (errors.password == "" && form.login != "" && form.password != "") {
       const response = await Login(form.login, form.password);
       if (response.ok) {
-        const { user } = await response.json();
-        authLogin({ login: user.login, id: user.id, permission: user.permission });
+        const { user, session } = await response.json();
+        authLogin({ login: user.login, id: user.id, permission: user.permission, token: session.token });
         navigate("/servise");
       } else {
         setErrors({
