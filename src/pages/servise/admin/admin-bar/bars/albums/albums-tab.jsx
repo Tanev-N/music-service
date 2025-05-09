@@ -1,33 +1,41 @@
 import { AlmubList } from "@/components/album/album";
 import { Button } from "@/components/button/button";
-import { createAlbum } from "@/components/album/album-api";
-import { AuthContext } from "@/features/auth-provider/auth-provider";
-import { useContext } from "react";
-import { Input } from "@/components/input/input";
-import { useState } from "react";
 import { CreateAlbumModal } from "./album-modal/album-modal";
+import { AuthContext } from "@/features/auth-provider/auth-provider";
+import { useContext, useState } from "react";
+
 const AlbumsTab = () => {
   const { user } = useContext(AuthContext);
-  console.log(user.token)
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [refresh, setRefresh] = useState(0);
 
   const openCreateAlbumWindow = () => {
     setIsModalOpen(true);
   };
 
+  const handleAlbumCreated = () => {
+    setRefresh(prev => prev + 1);
+    setIsModalOpen(false);
+  };
+
   const handleModalClose = () => {
     setIsModalOpen(false);
   };
+
   return (
     <>
-      <AlmubList />
+      <AlmubList refresh={refresh} />
       <Button
         type="submit"
         onClick={openCreateAlbumWindow}
         text="Создать новый альбом"
       />
       {isModalOpen && (
-        <CreateAlbumModal onClose={handleModalClose} token={user.token} />
+        <CreateAlbumModal
+          onClose={handleModalClose}
+          onAlbumCreated={handleAlbumCreated}
+          token={user.token}
+        />
       )}
     </>
   );

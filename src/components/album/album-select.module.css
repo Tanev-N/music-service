@@ -1,0 +1,87 @@
+.albumSelect {
+  position: relative;
+  width: 300px;
+  font-family: Arial, sans-serif;
+  margin-bottom: 10px;
+}
+
+.selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #fed6e3;
+  border-radius: 4px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #a8edea, #fed6e3);
+  cursor: pointer;
+}
+
+.albumCover {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+.albumTitle {
+  flex-grow: 1;
+  font-size: 1rem;
+  color: #222;
+}
+
+.placeholder {
+  font-size: 1rem;
+  color: #777;
+}
+
+.arrow {
+  margin-left: 8px;
+  font-size: 0.8rem;
+  color: #222;
+}
+
+.options {
+  position: absolute;
+  top: 100%;
+  width: 300px;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #7fe7f0;
+  border-top: none;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.option:hover {
+  background: #f0f0f0;
+}
+
+.optionCover {
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+.optionTitle {
+  font-size: 0.95rem;
+  color: #222;
+}

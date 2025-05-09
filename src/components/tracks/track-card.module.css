@@ -1,0 +1,85 @@
+.trackCard {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 12px; /* увеличенные отступы */
+  margin-bottom: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #fff;
+  max-width: 600px; /* ограничиваем ширину карточки */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.coverContainer {
+  position: relative;
+  cursor: pointer;
+  width: 60px;
+  height: 60px;
+}
+
+.trackImage {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 16px; /* увеличенное расстояние от обложки до информации */
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+  border-radius: 4px;
+}
+
+.coverContainer:hover .overlay {
+  opacity: 1;
+}
+
+.playIcon {
+  color: #fff;
+  font-size: 24px;
+}
+
+.trackInfo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.trackTitle {
+  font-size: 1.2em;
+  margin: 0 0 4px 0;
+}
+
+.trackArtist,
+.trackDuration {
+  margin: 2px 0;
+  font-size: 0.9em;
+  color: #555;
+}
+
+.progressBar {
+  width: 120px;  /* фиксированная длина */
+  height: 6px;
+  background: #eee;
+  margin-top: 8px;
+  border-radius: 3px;
+}
+
+.progress {
+  height: 100%;
+  background: #2196F3;
+  border-radius: 3px;
+}

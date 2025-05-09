@@ -3,7 +3,7 @@ import { getAllAlbums, getAlbum, deleteAlbum } from "./album-api";
 import { useEffect, useState } from "react";
 import { AlbumDetailsModal } from "./AlbumDetailsModal/album-details-modal";
 
-const AlmubList = () => {
+const AlmubList = ({ refresh }) => {
     const [albums, setAlbums] = useState([]);
     const [selectedAlbumId, setSelectedAlbumId] = useState(null);
 
@@ -18,7 +18,7 @@ const AlmubList = () => {
             }
         };
         fetchAlbums();
-    }, []);
+    }, [refresh]); // обновляем при изменении refresh
 
     return (
         <div className={styles.album_container}>

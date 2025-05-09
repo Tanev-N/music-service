@@ -6,7 +6,7 @@
     /* justify-content: center; */
     align-items: center;
     width: 100vw;
-    height: 100vh;
+    min-height: 100vh; /* заменено с height: 100vh */
     background-image: linear-gradient(to top, #a8edea 0%, #fed6e3 100%);
 }
 .main__section_title {
@@ -24,6 +24,7 @@
 
 .content__section {
     display: flex;
+    margin-bottom: 20px;
     flex-direction: column;
     justify-content: center;
     background: rgba(255,255,255,0.7);

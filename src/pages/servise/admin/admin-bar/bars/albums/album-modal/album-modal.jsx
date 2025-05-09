@@ -4,7 +4,7 @@ import { Button } from '@/components/button/button';
 import { createAlbum } from '@/components/album/album-api';
 import styles from "./album-modal.module.css";
 
-const CreateAlbumModal = ({ onClose, token, onSuccess }) => {
+const CreateAlbumModal = ({ onClose, token, onAlbumCreated }) => {
     const [formData, setFormData] = useState({
         title: '',
         artist: '',
@@ -26,7 +26,7 @@ const CreateAlbumModal = ({ onClose, token, onSuccess }) => {
             ? new Date(formData.release_date).toISOString()
             : new Date().toISOString();
         await createAlbum(formData.title, formData.artist, formattedReleaseDate, formData.cover_url, token);
-        onSuccess?.();
+        onAlbumCreated?.();
         onClose();
     };
 

@@ -4,6 +4,7 @@ import { Button } from "@/components/button/button";
 import styles from "./album-details-modal.module.css";
 import { useContext } from "react";
 import { AuthContext } from "@/features/auth-provider/auth-provider";
+import TrackCard from "../../tracks/TrackCard";
 
 const AlbumDetailsModal = ({ albumId, onClose, onAlbumDeleted }) => {
     const [album, setAlbum] = useState(null);
@@ -81,13 +82,11 @@ const AlbumDetailsModal = ({ albumId, onClose, onAlbumDeleted }) => {
                         <h3>Треки:</h3>
                         <div className={styles.tracks_container}>
                             {album.tracks && album.tracks.length > 0 ? (
-                                <ul className={styles.tracks_list}>
+                                <div>
                                     {album.tracks.map(track => (
-                                        <li key={track.id} className={styles.track_item}>
-                                            {track.title} ({track.duration} сек.)
-                                        </li>
+                                        <TrackCard key={track.ID} track={track} />
                                     ))}
-                                </ul>
+                                </div>
                             ) : (
                                 <p>Нет треков</p>
                             )}
