@@ -7,21 +7,22 @@
   border: 1px solid #ccc;
   border-radius: 8px;
   background-color: #fff;
-  max-width: 600px; /* ограничиваем ширину карточки */
+  max-width: 800px; /* ограничиваем ширину карточки */
   margin-left: auto;
   margin-right: auto;
+  justify-content: space-around;
 }
 
 .coverContainer {
   position: relative;
   cursor: pointer;
-  width: 60px;
-  height: 60px;
+  width: 110px;
+  height: 110px;
 }
 
 .trackImage {
-  width: 60px;
-  height: 60px;
+  width: 110px;
+  height: 110px;
   object-fit: cover;
   border-radius: 4px;
   margin-right: 16px; /* увеличенное расстояние от обложки до информации */
@@ -82,4 +83,53 @@
   height: 100%;
   background: #2196F3;
   border-radius: 3px;
+}
+
+/* New styles for genre dropdown list */
+.genreOptions {
+  padding: 5px;
+  position: absolute;
+  z-index: 1000;
+  list-style: none;
+  margin: 0;
+  
+  min-width: 150px;
+  max-width: 200px;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.genreOption {
+
+  cursor: pointer;
+}
+
+
+/* New container for genres with removal option */
+.genreListContainer {
+  margin-top: 1rem;
+  padding: 0.5rem;
+
+  border-radius: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.genreItem {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 0.3rem 0.5rem;
+  display: flex;
+  align-items: center;
+}
+.removeIcon {
+  margin-left: 0.5rem;
+  cursor: pointer;
+  font-weight: bold;
+  color: red;
 }

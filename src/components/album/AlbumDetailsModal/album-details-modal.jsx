@@ -84,7 +84,7 @@ const AlbumDetailsModal = ({ albumId, onClose, onAlbumDeleted }) => {
                             {album.tracks && album.tracks.length > 0 ? (
                                 <div>
                                     {album.tracks.map(track => (
-                                        <TrackCard key={track.ID} track={track} />
+                                        <TrackCard key={track.ID} isDeletebly={true} track={track} />
                                     ))}
                                 </div>
                             ) : (

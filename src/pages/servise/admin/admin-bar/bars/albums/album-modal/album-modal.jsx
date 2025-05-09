@@ -54,7 +54,10 @@ const CreateAlbumModal = ({ onClose, token, onAlbumCreated }) => {
                     <Input
                         type="date"
                         name="release_date"
-                        value={formData.release_date}
+                        value={
+                            formData.release_date ||
+                            new Date().toISOString().slice(0, 10)
+                        }
                         onChange={handleChange}
                         required
                     />

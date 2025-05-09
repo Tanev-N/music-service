@@ -3,7 +3,7 @@ import styles from "./album-select.module.css";
 
 const AlbumSelect = ({ albums, value, onChange, placeholder = "Выберите альбом" }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const selectedAlbum = albums.find(a => a.id === value);
+  const selectedAlbum = albums && albums.find(a => a.id === value);
   const dropdownRef = useRef(null);
 
   const toggleDropdown = () => {
@@ -40,7 +40,7 @@ const AlbumSelect = ({ albums, value, onChange, placeholder = "Выберите 
       </div>
       {isOpen && (
         <ul className={styles.options}>
-          {albums.map(album => (
+          {albums && albums.map(album => (
             <li key={album.id} className={styles.option} onClick={() => handleSelect(album.id)}>
               <img src={album.cover_url} alt={album.title} className={styles.optionCover} />
               <span className={styles.optionTitle}>{album.title}</span>
