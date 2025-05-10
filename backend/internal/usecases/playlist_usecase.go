@@ -29,7 +29,7 @@ func NewPlaylistUseCase(
 	}
 }
 
-func (uc *playlistUseCase) CreatePlaylist(userID uuid.UUID, name, description string) (*models.Playlist, error) {
+func (uc *playlistUseCase) CreatePlaylist(userID uuid.UUID, name, description string, coverURL string) (*models.Playlist, error) {
 	if _, err := uc.userRepo.FindByID(userID); err != nil {
 		return nil, fmt.Errorf("user not found: %w", err)
 	}
@@ -49,6 +49,7 @@ func (uc *playlistUseCase) CreatePlaylist(userID uuid.UUID, name, description st
 		Name:        name,
 		Description: description,
 		UserID:      userID,
+		CoverURL:    coverURL,
 		CreatedDate: time.Now(),
 		UpdatedAt:   time.Now(),
 	}

@@ -33,6 +33,7 @@ func (h *PlaylistHandler) CreatePlaylist(w http.ResponseWriter, r *http.Request)
 	var request struct {
 		Name        string `json:"name"`
 		Description string `json:"description"`
+		CoverURL    string `json:"cover_url"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -46,7 +47,7 @@ func (h *PlaylistHandler) CreatePlaylist(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	playlist, err := h.playlistUseCase.CreatePlaylist(userID, request.Name, request.Description)
+	playlist, err := h.playlistUseCase.CreatePlaylist(userID, request.Name, request.Description, request.CoverURL)
 	if err != nil {
 		log.Printf("Ошибка при создании плейлиста: %v", err)
 		http.Error(w, "Ошибка при создании плейлиста", http.StatusInternalServerError)

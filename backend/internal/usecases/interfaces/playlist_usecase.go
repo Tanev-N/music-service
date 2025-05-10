@@ -7,7 +7,7 @@ import (
 )
 
 type PlaylistUseCase interface {
-	CreatePlaylist(userID uuid.UUID, name, description string) (*models.Playlist, error)
+	CreatePlaylist(userID uuid.UUID, name, description string, coverURL string) (*models.Playlist, error)
 	AddTrackToPlaylist(playlistID, trackID uuid.UUID) error
 	RemoveTrackFromPlaylist(playlistID, trackID uuid.UUID) error
 	EditPlaylistInfo(playlistID uuid.UUID, name, description string) error

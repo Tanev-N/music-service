@@ -38,7 +38,6 @@ const RegisterPage = () => {
     }
     if (name === "repeatPassword") {
       if (form.password != form.repeatPassword) {
-        setErrors({ ...errors, repeatPassword: "Пароли не совпадают" });
       } else {
         setErrors({ ...errors, repeatPassword: "" });
       }
@@ -47,17 +46,22 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Check if passwords match on submit
+    if (form.password !== form.repeatPassword) {
+      setErrors({ ...errors, repeatPassword: "Пароли не совпадают" });
+      return;
+    }
+
     if (
-      errors.login == "" &&
-      errors.password == "" &&
-      errors.repeatPassword == "" &&
-      form.login != "" &&
-      form.password != "" &&
-      form.repeatPassword != ""
+      errors.login === "" &&
+      errors.password === "" &&
+      errors.repeatPassword === "" &&
+      form.login !== "" &&
+      form.password !== "" &&
+      form.repeatPassword !== ""
     ) {
       const response = await Register(form.login, form.password);
       if (response.ok) {
-        
         navigate("/login");
       } else {
         setErrors({

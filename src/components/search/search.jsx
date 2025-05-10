@@ -55,6 +55,7 @@ const Search = () => {
         ) : trackResults && trackResults.length > 0 ? (
           trackResults.map((track) => (
             <TrackCard
+              isForUser={true}
               key={track.ID}
               track={track}
               onRemoveFromAlbum={() => {}}

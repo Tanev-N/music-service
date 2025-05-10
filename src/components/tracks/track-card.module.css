@@ -2,15 +2,21 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 12px; /* увеличенные отступы */
+  padding: 12px;
   margin-bottom: 12px;
-  border: 1px solid #ccc;
+  border: none; /* removed border */
   border-radius: 8px;
   background-color: #fff;
   max-width: 800px; /* ограничиваем ширину карточки */
   margin-left: auto;
   margin-right: auto;
   justify-content: space-around;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.trackCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
 .coverContainer {
@@ -85,6 +91,36 @@
   border-radius: 3px;
 }
 
+/* New styles for full-width progress bar and time labels */
+.fullProgressBar {
+  width: 100%;
+  min-width: 200px;
+  height: 6px;
+  background: #eee;
+  margin-top: 8px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.progress {
+  height: 100%;
+  background: #2196F3;
+  border-radius: 3px;
+}
+
+.progressLabels {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.8rem;
+  color: #555;
+  margin-top: 4px;
+}
+
+.leftTime, .rightTime {
+  padding: 0 4px;
+}
+
 /* New styles for genre dropdown list */
 .genreOptions {
   padding: 5px;
@@ -132,4 +168,57 @@
   cursor: pointer;
   font-weight: bold;
   color: red;
+}
+
+.listenedBadge {
+  display: inline-block;
+  background-color: #B8F2E6;
+  color: #555;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  margin-left: 8px;
+}
+
+.addToPlaylistContainer {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.userPlaylistsDropdown {
+  margin-top: 8px;
+  padding: 8px;
+  list-style: none;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 2000;
+  width: 180px;
+  animation: fadeInDropdown 0.3s ease-in-out;
+}
+
+@keyframes fadeInDropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.userPlaylistsDropdown li {
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 0.2s ease;
+}
+
+.userPlaylistsDropdown li:hover {
+  background: #f0f0f0;
 }
