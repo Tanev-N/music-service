@@ -39,6 +39,12 @@
 ![SONIX - Плейлист](image/README/1746956755064.png)
 Подробная информация о плейлисте.
 
+Для слепой Софьи:
+|
+|
+|
+v
+
 ```bash
 # Запуск бекенда:
 cd backend/
@@ -46,5 +52,6 @@ docker-compose build
 docker-compose up -d
 
 # Запуск фронтенда:
+npm i
 npm run dev
 ```
